@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "267635385145",
+    "project_id": "getfunds-9a984",
+    "storage_bucket": "getfunds-9a984.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:267635385145:android:cde3968014ccec88c67ee8",
+        "android_client_info": {
+          "package_name": "com.example.get_funds"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "267635385145-4ulkl4jbh0nk07jmo98o9gdvlae5cmmq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCxx5uW2-uHaLwSpE5eGxUOH0_t5AhNc9U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "267635385145-4ulkl4jbh0nk07jmo98o9gdvlae5cmmq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:267635385145:android:66c67f5d420e73b3c67ee8",
+        "android_client_info": {
+          "package_name": "getfunds.vc.get_funds_v1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "267635385145-4ulkl4jbh0nk07jmo98o9gdvlae5cmmq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCxx5uW2-uHaLwSpE5eGxUOH0_t5AhNc9U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "267635385145-4ulkl4jbh0nk07jmo98o9gdvlae5cmmq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
