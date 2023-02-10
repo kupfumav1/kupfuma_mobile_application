@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../auth.dart';
+import 'package:select_form_field/select_form_field.dart';
+import 'package:country_picker/country_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:currency_picker/currency_picker.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -26,6 +31,9 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _controllerFname = TextEditingController();
   final TextEditingController _controllerSname = TextEditingController();
   final TextEditingController _controllerNumber = TextEditingController();
+  final countryController = TextEditingController();
+  String currency_value = '';
+
   Future<void> signInWithEmailAndPassword() async {
     try {
       await Auth().signInWithEmailAndPassword(
@@ -45,6 +53,7 @@ class _LoginPageState extends State<LoginPage> {
       'fname': _controllerFname.text,
       'sname': _controllerSname.text,
       'email': _controllerEmail.text,
+      'currency':currency_value,
 
     };
     try {
@@ -61,7 +70,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _title() {
-    return const Text('GetFunds');
+    return const Text('Kupfuma');
   }
 
   Widget _entryField(
@@ -72,11 +81,13 @@ class _LoginPageState extends State<LoginPage> {
       controller: controller,
       decoration: InputDecoration(
         labelText: title,
-
+        filled: true, //<-- SEE HERE
+        fillColor: Colors.white,
       ),
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: Colors.black),
     );
   }
+
   Widget _errorMessage() {
     return Text(errorMessage == '' ? '' : 'Error ? $errorMessage');
   }
@@ -100,7 +111,7 @@ class _LoginPageState extends State<LoginPage> {
       child: Text(
           isLogin ? 'Need an account? Register' : 'Already have an account? Login',
         style: TextStyle(
-          color: Colors.white,
+          color: Colors.blue,
         ),
       ),
     );
@@ -108,26 +119,42 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: _title(),
-      ),
+      appBar: null,
+      // AppBar(
+      //   title: _title(),
+      // ),
       body: Container(
         height: double.infinity,
         width: double.infinity,
         padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-              image: AssetImage("assets/images/backgr.png"),
-              fit: BoxFit.cover),
-        ),
+        // decoration: const BoxDecoration(
+        //   image: DecorationImage(
+        //       image: AssetImage("assets/images/p0.jpg"),
+        //       fit: BoxFit.cover),
+        // ),
         child:
         SingleChildScrollView(
         child:Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            _entryField('email', _controllerEmail),
-            _entryField('password', _controllerPassword),
+            const SizedBox(height: 40,),
+            Image.asset('assets/images/lg.png',
+            width: 230,
+              height:230,
+            ),
+            const SizedBox(height: 30,),
+            _entryField('Email', _controllerEmail),
+            TextField(
+              controller: _controllerPassword,
+              decoration: InputDecoration(
+                labelText: 'Password',
+                filled: true, //<-- SEE HERE
+                fillColor: Colors.white,
+              ),
+              style: const TextStyle(color: Colors.black),
+              obscureText: true,
+            ),
             _errorMessage(),
             Visibility(
               visible: _isVisible,
@@ -137,6 +164,23 @@ class _LoginPageState extends State<LoginPage> {
                   _entryField('First Name',_controllerFname),
                   _entryField('Surname',_controllerSname),
                   _entryField('Number',_controllerNumber),
+                  ElevatedButton(
+                    onPressed: () {
+                      showCurrencyPicker(
+                        context: context,
+                        showFlag: true,
+                        showSearchField: true,
+                        showCurrencyName: true,
+                        showCurrencyCode: true,
+                        onSelect: (Currency currency) {
+                          print('Select Currency: ${currency.name}');
+                          currency_value=currency.name;
+                        },
+                        favorite: ['USD'],
+                      );
+                    },
+                    child: const Text('Select Currency'),
+                  ),
                 ],),
             ),
             _submitButton(),

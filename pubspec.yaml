@@ -49,6 +49,14 @@ dependencies:
   file_picker: ^5.2.5
   firebase_storage: ^11.0.10
   carousel_slider: ^4.2.1
+  currency_picker: ^2.0.14
+  country_picker: ^2.0.19
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+  syncfusion_flutter_calendar: ^20.4.48
+  flutter_launcher_icons: ^0.11.0
+  dropdown_button2: ^1.9.2
 
 dev_dependencies:
   flutter_test:
@@ -61,6 +69,10 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
 
+flutter_icons:
+  androin:true
+  ios:true
+  image_path:"assets/images/lg.png"
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
