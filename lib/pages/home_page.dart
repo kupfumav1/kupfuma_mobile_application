@@ -290,8 +290,12 @@ class HomePageState extends State<HomePage> {
         break;
       case 2:
         showDialog<String>(
+
           context: context,
           builder: (BuildContext context) => Dialog(
+
+            alignment: Alignment.bottomCenter,
+            backgroundColor: Color.fromRGBO(0,0, 0, 0.0),
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Column(
@@ -849,6 +853,12 @@ class HomePageState extends State<HomePage> {
                 ),
               ],
             ),
+            const Text(
+              'Breakeven',
+              style: TextStyle(
+                fontSize: 20,
+              ),
+            ),
             //Initialize the chart widget
             Container(
               padding: const EdgeInsets.all(10),
@@ -860,7 +870,7 @@ class HomePageState extends State<HomePage> {
                 child: SfCartesianChart(
                     primaryXAxis: CategoryAxis(),
                     // Chart title
-                    title: ChartTitle(text: 'Break Even'),
+                    title: null,
                     // Enable legend
                     legend: Legend(isVisible: false),
                     // Enable tooltip
@@ -1100,6 +1110,9 @@ class SecondRoute extends StatelessWidget {
                           onPressed: () => showDialog<String>(
                             context: context,
                             builder: (BuildContext context) => Dialog(
+
+                              alignment: Alignment.bottomCenter,
+                              backgroundColor: Color.fromRGBO(0,0, 0, 0.0),
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Column(
@@ -1368,6 +1381,8 @@ class ThirdRoute extends StatelessWidget {
                           onPressed: () => showDialog<String>(
                             context: context,
                             builder: (BuildContext context) => Dialog(
+                              alignment: Alignment.bottomCenter,
+                              backgroundColor: Color.fromRGBO(0,0, 0, 0.0),
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Column(
@@ -1517,6 +1532,8 @@ class RevenuePageState extends State<RevenuePage> {
         showDialog<String>(
           context: context,
           builder: (BuildContext context) => Dialog(
+            alignment: Alignment.bottomCenter,
+            backgroundColor: Color.fromRGBO(0,0, 0, 0.0),
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Column(
@@ -2090,6 +2107,8 @@ class FundingPageState extends State<FundingPage> {
         showDialog<String>(
           context: context,
           builder: (BuildContext context) => Dialog(
+              alignment: Alignment.bottomCenter,
+            backgroundColor: Color.fromRGBO(0,0, 0, 0.0),
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Column(
@@ -2224,6 +2243,9 @@ class FundingPageState extends State<FundingPage> {
   double funding = 0.0;
   double fundingp = 0.0;
   double pol = 0.0;
+  String minus=" ";
+  String pos=" ";
+  String eq=" ";
 
   double totalExpenses = 0.0;
 
@@ -2262,9 +2284,27 @@ class FundingPageState extends State<FundingPage> {
       Map revenue = event.snapshot.value as Map;
       setState(() {
         totalRevenue += double.parse(revenue['amount']);
-        funding = totalRevenue * 2.5;
+        funding = pol * 2.5;
         fundingp = funding / 100000;
         pol = totalRevenue - totalExpenses;
+        if(pol<0)
+        {
+          minus="$pol";
+          pos=" ";
+          eq=" ";
+        }
+        if(pol>0)
+        {
+          minus="$pol";
+          pos="$pol";
+          eq=" ";
+        }
+        if(pol==0)
+        {
+          minus=" ";
+          pos=" ";
+          eq="$pol";
+        }
       });
     });
     FirebaseDatabase.instance
@@ -2276,6 +2316,25 @@ class FundingPageState extends State<FundingPage> {
       setState(() {
         totalExpenses += double.parse(revenue['amount']);
         pol = totalRevenue - totalExpenses;
+        print("pol is $pol");
+        if(pol<0)
+          {
+            minus="\$$pol";
+            pos=" ";
+            eq=" ";
+          }
+        if(pol>0)
+        {
+          minus=" ";
+          pos="\$$pol";
+          eq=" ";
+        }
+        if(pol==0)
+        {
+          minus=" ";
+          pos=" ";
+          eq="\$$pol";
+        }
       });
     });
   }
@@ -2375,6 +2434,51 @@ class FundingPageState extends State<FundingPage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                SizedBox(height:30),
+                Row(
+                  children: [
+                    Expanded(child:
+                    Column(
+                      children: [
+                        Text(""),
+                      ],
+                    )),
+                    Expanded(child:
+                    Column(
+                      children: [
+                        Text("$minus",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red),),
+                      ],
+                    )),
+                    Expanded(child:
+                    Column(
+                      children: [
+                        Text("$eq",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red),),
+                      ],
+                    )),
+                    Expanded(child:
+                    Column(
+                      children: [
+                        Text("$pos",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green),
+                        ),
+                      ],
+                    )),
+                    Expanded(child:
+                    Column(
+                      children: [
+                        Text(""),
+                      ],
+                    ))
+                  ],
+                ),
                 Padding(
                   padding: const EdgeInsets.all(15.0),
                   child: LinearPercentIndicator(
@@ -2382,7 +2486,7 @@ class FundingPageState extends State<FundingPage> {
                     lineHeight: 23.0,
                     percent: 0.5,
                     center: Text(
-                      "\$$pol",
+                      " ",
                       style: new TextStyle(
                         fontSize: 12.0,
                         color: Colors.white,
@@ -2430,9 +2534,9 @@ class FundingPageState extends State<FundingPage> {
                     icon: Icon(Icons.format_shapes),
                     labelText: 'What do you need funding for',
                     changeIcon: true,
-                    dialogTitle: 'Funding for',
-                    dialogCancelBtn: 'CANCEL',
-                    enableSearch: true,
+                    dialogTitle: 'Our funding is highly prioritised towards value adding equipment in order to build manufactoring capacity for small business in Africa, such businesses take priority on our funding initiatives.',
+                    dialogCancelBtn: 'Close',
+                    enableSearch: false,
                     dialogSearchHint: 'Search',
                     items: _items,
                     onChanged: (val) => setState(() => _valueChanged = val),
@@ -2461,13 +2565,14 @@ class FundingPageState extends State<FundingPage> {
                   child: Column(
                     children: [
                       const Text(
-                        'Our funding, rewards those who are efficient at business by being profitable'
-                        'whilst our analytics help you become profitable with your current resources.',
+                        'Our analytics help small businesses become profitable whilst our flexible funding rewards profitability by giving you more capital',
+
                         textAlign: TextAlign.center,
                       ),
                     ],
                   ),
-                )
+                ),
+                const SizedBox(height: 20),
               ],
             ),
           ],),
@@ -2537,6 +2642,8 @@ class ExpensesPageState extends State<ExpensesPage> {
         showDialog<String>(
           context: context,
           builder: (BuildContext context) => Dialog(
+            alignment: Alignment.bottomCenter,
+            backgroundColor: Color.fromRGBO(0,0, 0, 0.0),
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Column(
@@ -3209,8 +3316,12 @@ class ISPage extends StatefulWidget {
   ISPageState createState() => ISPageState();
 }
 
+
 class ISPageState extends State<ISPage> {
   final User? user = Auth().currentUser;
+
+
+
    int _selectedIndex = 2;
   // Check if the user is signed in
   void _onItemTapped(int index) {
@@ -3229,6 +3340,8 @@ class ISPageState extends State<ISPage> {
         showDialog<String>(
           context: context,
           builder: (BuildContext context) => Dialog(
+            alignment: Alignment.bottomCenter,
+            backgroundColor: Color.fromRGBO(0,0, 0, 0.0),
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Column(
@@ -3509,7 +3622,7 @@ class ISPageState extends State<ISPage> {
               child: Column(
                 children: [
                   Text(""),
-                  Text('$sme: Income Statement'),
+                  Text('$sme: Income Statement - $the_month $the_year'),
                   Text(""),
                 ],
               ),
@@ -3990,6 +4103,8 @@ class BSPageState extends State<BSPage> {
                           onPressed: () => showDialog<String>(
                                 context: context,
                                 builder: (BuildContext context) => Dialog(
+                                  alignment: Alignment.bottomCenter,
+                                  backgroundColor: Color.fromRGBO(0,0, 0, 0.0),
                                   child: Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Column(
@@ -4183,6 +4298,8 @@ class CFPageState extends State<CFPage> {
                           onPressed: () => showDialog<String>(
                                 context: context,
                                 builder: (BuildContext context) => Dialog(
+                                  alignment: Alignment.bottomCenter,
+                                  backgroundColor: Color.fromRGBO(0,0, 0, 0.0),
                                   child: Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Column(

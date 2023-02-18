@@ -163,7 +163,7 @@ class _LoginPageState extends State<LoginPage> {
                 _entryField('SME Name',_controllerSME),
                   _entryField('First Name',_controllerFname),
                   _entryField('Surname',_controllerSname),
-                  _entryField('Number',_controllerNumber),
+                  _entryField('Phone Number',_controllerNumber),
                   ElevatedButton(
                     onPressed: () {
                       showCurrencyPicker(
