@@ -185,6 +185,14 @@ class _LoginPageState extends State<LoginPage> {
             ),
             _submitButton(),
             _loginOrRegisterButton(),
+            Center(
+              child: Text('Our support to the African SMEs is geared towards funding SMEs to enable value addition for import substitution, the phase which will unlock Africa\'s growth potential to catch up with the rest of the world.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.blue,
+                ),
+              ),
+            ),
           ],
         ),),
       ),
