@@ -18,6 +18,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 //import 'package:fluttertoast/fluttertoast.dart';
 
 String theDate = DateFormat.d().format(DateTime.now());
@@ -35,7 +36,17 @@ String actualMonthRef = month + "-" + the_year;
 Future<void> signOut() async {
   await Auth().signOut();
 }
+class GuideRoute extends StatelessWidget {
+  const GuideRoute({super.key});
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SfPdfViewer.asset(
+          'assets/guide.pdf'),
+    );
+  }
+}
 class HomePage extends StatefulWidget {
   // ignore: prefer_const_constructors_in_immutables
   HomePage({Key? key}) : super(key: key);
@@ -61,11 +72,13 @@ class MenuItem {
 }
 
 class MenuItems {
-  static const List<MenuItem> firstItems = [home, settings];
+  static const List<MenuItem> firstItems = [home,guide, settings];
   static const List<MenuItem> secondItems = [logout];
 
   static const home =
       MenuItem(text: 'Profile', icon: Icons.supervised_user_circle_outlined);
+  static const guide =
+  MenuItem(text: 'User Guide', icon: Icons.verified_user_rounded);
   static const settings = MenuItem(text: 'Reset', icon: Icons.delete_forever);
   static const logout = MenuItem(text: 'Log Out', icon: Icons.logout);
 
@@ -229,6 +242,13 @@ class MenuItems {
           ),
         );
         //Do something
+        break;
+      case MenuItems.guide:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const GuideRoute()),
+        );
+
         break;
       case MenuItems.settings:
         showDialog<String>(
@@ -3543,9 +3563,9 @@ class ExpensesPageState extends State<ExpensesPage> {
                           controller: planController,
                           //initialValue: _initialValue,
                           icon: Icon(Icons.format_shapes),
-                          labelText: 'Cartegory',
+                          labelText: 'Category',
                           changeIcon: true,
-                          dialogTitle: 'Expense Cartegory',
+                          dialogTitle: 'Expense Category',
                           dialogCancelBtn: 'CANCEL',
                           enableSearch: true,
                           dialogSearchHint: 'Search',
@@ -5266,9 +5286,9 @@ class BSPageState extends State<BSPage> {
                     controller: cartFixedAssetController,
                     //initialValue: _initialValue,
                     icon: Icon(Icons.format_shapes),
-                    labelText: 'Select Cartegory',
+                    labelText: 'Select Category',
                     changeIcon: true,
-                    dialogTitle: 'Fixed Asset Cartegory',
+                    dialogTitle: 'Fixed Asset Category',
                     dialogCancelBtn: 'CANCEL',
                     enableSearch: true,
                     dialogSearchHint: 'Search',
@@ -5371,9 +5391,9 @@ class BSPageState extends State<BSPage> {
                     controller: cartCurrentAssetController,
                     //initialValue: _initialValue,
                     icon: Icon(Icons.format_shapes),
-                    labelText: 'Select Cartegory',
+                    labelText: 'Select Category',
                     changeIcon: true,
-                    dialogTitle: 'Current Asset Cartegory',
+                    dialogTitle: 'Current Asset Category',
                     dialogCancelBtn: 'CANCEL',
                     enableSearch: true,
                     dialogSearchHint: 'Search',
@@ -5476,9 +5496,9 @@ class BSPageState extends State<BSPage> {
                     controller: cartCurrentLiabilityController,
                     //initialValue: _initialValue,
                     icon: Icon(Icons.format_shapes),
-                    labelText: 'Select Cartegory',
+                    labelText: 'Select Category',
                     changeIcon: true,
-                    dialogTitle: 'Current Liability Cartegory',
+                    dialogTitle: 'Current Liability Category',
                     dialogCancelBtn: 'CANCEL',
                     enableSearch: true,
                     dialogSearchHint: 'Search',
@@ -5581,9 +5601,9 @@ class BSPageState extends State<BSPage> {
                     controller: cartLongtermLiabilityController,
                     //initialValue: _initialValue,
                     icon: Icon(Icons.format_shapes),
-                    labelText: 'Select Cartegory',
+                    labelText: 'Select Category',
                     changeIcon: true,
-                    dialogTitle: 'Longterm Liability Cartegory',
+                    dialogTitle: 'Longterm Liability Category',
                     dialogCancelBtn: 'CANCEL',
                     enableSearch: true,
                     dialogSearchHint: 'Search',

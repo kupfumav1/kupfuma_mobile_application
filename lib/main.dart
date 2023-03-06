@@ -5,7 +5,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'dart:math';
 
 final List<List<String>> imgList = [
-  ['assets/images/Tatenda.jpg','We offer data driven\n funding for your small\n to medium business,\n no collateral, 1% interest'],
+  ['assets/images/Tatenda.jpg','We offer data driven\n funding for your small\n to medium business,\n no collateral, 0% interest'],
   ['assets/images/p2.jpg','We offer data driven funding\n for your small to\n medium business, no collateral'],
   ['assets/images/p3.jpg','Our data analytics will\n help you double your sales.\n Take action plans\n and double your sales'],
   ['assets/images/p4.jpg','We are transforming\n small to medium businesses\n into High Growth Businesses'],

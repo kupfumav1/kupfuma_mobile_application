@@ -3,10 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../auth.dart';
 import 'package:select_form_field/select_form_field.dart';
-import 'package:country_picker/country_picker.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:currency_picker/currency_picker.dart';
+import 'package:flutter_email_sender/flutter_email_sender.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -31,9 +30,280 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _controllerFname = TextEditingController();
   final TextEditingController _controllerSname = TextEditingController();
   final TextEditingController _controllerNumber = TextEditingController();
+  final TextEditingController sectorController = TextEditingController();
   final countryController = TextEditingController();
-  String currency_value = '';
+  final List<Map<String, dynamic>> _items = [
+    {
+      'value': 'Administrative Services',
+      'label': 'Administrative Services',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Advertising and Marketing',
+      'label': 'Advertising and Marketing',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Aerospace',
+      'label': 'Aerospace',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Agriculture',
+      'label': 'Agriculture',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Airlines',
+      'label': 'Airlines',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Amusement and Recreation',
+      'label': 'Amusement and Recreation',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Art and Creatives',
+      'label': 'Art and Creatives',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Automobile',
+      'label': 'Automobile',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Aquaculture and Fisheries',
+      'label': 'Aquaculture and Fisheries',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Beverages and Tobacco',
+      'label': 'Beverages and Tobacco',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Business Services',
+      'label': 'Business Services',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Clothing and Fashion',
+      'label': 'Clothing and Fashion',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Chemicals and Materials',
+      'label': 'Chemicals and Materials',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Construction and Infrastructure ',
+      'label': 'Construction and Infrastructure ',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Consumer Discretionary',
+      'label': 'Consumer Discretionary',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Consumer Services',
+      'label': 'Consumer Services',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Consumer Staples',
+      'label': 'Consumer Staples',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Cultural Industries',
+      'label': 'Cultural Industries',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Education',
+      'label': 'Education',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Energy',
+      'label': 'Energy',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Entertainment',
+      'label': 'Entertainment',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Finance and Banking',
+      'label': 'Finance and Banking',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Food',
+      'label': 'Food',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Forestry and Timber',
+      'label': 'Forestry and Timber',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Funeral Services',
+      'label': 'Funeral Services',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Healthcare',
+      'label': 'Healthcare',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Heavy Industry',
+      'label': 'Heavy Industry',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Hotels and Lodges',
+      'label': 'Hotels and Lodges',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Information Technology',
+      'label': 'Information Technology',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Insurance',
+      'label': 'Insurance',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Law',
+      'label': 'Law',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Life Sciences',
+      'label': 'Life Sciences',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Manufacturing',
+      'label': 'Manufacturing',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Materials',
+      'label': 'Materials',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Media and Television',
+      'label': 'Media and Television',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Mining and Extraction',
+      'label': 'Mining and Extraction',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Professional Services',
+      'label': 'Professional Services',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Publishing',
+      'label': 'Publishing',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Real Estate',
+      'label': 'Real Estate',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Restaurants',
+      'label': 'Restaurants',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Retail',
+      'label': 'Retail',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Security Services',
+      'label': 'Security Services',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Science and Technology',
+      'label': 'Science and Technology',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Social Services',
+      'label': 'Social Services',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Sports and Fitness',
+      'label': 'Sports and Fitness',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Telecommunication',
+      'label': 'Telecommunication',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Textiles',
+      'label': 'Textiles',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Tourism',
+      'label': 'Tourism',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Transportation and Logistics',
+      'label': 'Transportation and Logistics',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Utilities',
+      'label': 'Utilities',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Waste Management',
+      'label': 'Waste Management',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Water',
+      'label': 'Water',
+      'icon': Icon(Icons.business_sharp),
+    },
+    {
+      'value': 'Wholesale',
+      'label': 'Wholesale',
+      'icon': Icon(Icons.business_sharp),
+    },
 
+  ];
+  String currency_value = '';
+  String _valueChanged = '';
+  String _valueToValidate = '';
+  String _valueSaved = '';
   Future<void> signInWithEmailAndPassword() async {
     try {
       await Auth().signInWithEmailAndPassword(
@@ -54,8 +324,21 @@ class _LoginPageState extends State<LoginPage> {
       'sname': _controllerSname.text,
       'email': _controllerEmail.text,
       'currency':currency_value,
+      'sector':sectorController.text,
 
     };
+    String the_name=_controllerFname.text;
+    //// send mail start
+    String message="<html><body>Hi, $the_name<br><br>Welcome to Kupfuma, we will help you build wealth for your small business through our business analytics and flexible funding. <br><br>There is a funding gap of \$300billion across small business in Africa, our analytics will help your small businesses become profitable whilst our flexible funding will reward you with more capital to grow your small business to become a big business. <br><br>We are highly geared towards funding small businesses for down stream value addition to undertake import substitution across Africa, a phase which will help unlock the growth potential for Africa to catch up with the rest of the world. <br><br>Simply doubling down on efforts for small businesses with business analytics and flexible funding, we will easily double Africa’s Gross Domestic Product to help improve living standards across the continent. <br><br>Be part of our journey, to build wealth for your small business. <br><br>Kupfuma | Building wealth<br> <a href='www.kupfuma.com'>www.cKupfuma.com</a><br>Facebook handle and Twitter handle</body></html>";
+    final Email send_email = Email(
+      body: '$message',
+      subject: 'Kupfuma Registration',
+      recipients: [_controllerEmail.text],
+      isHTML: true,
+    );
+
+    await FlutterEmailSender.send(send_email);
+   // send mail end
     try {
       await FirebaseDatabase.instance.ref().child('User'+'/').push().set(user);
       await Auth().createUserWithEmailAndPassword(
@@ -163,6 +446,27 @@ class _LoginPageState extends State<LoginPage> {
                 _entryField('SME Name',_controllerSME),
                   _entryField('First Name',_controllerFname),
                   _entryField('Surname',_controllerSname),
+                  SelectFormField(
+                    type: SelectFormFieldType.dialog,
+                    controller: sectorController,
+                    //initialValue: _initialValue,
+                    icon: Icon(Icons.format_shapes),
+                    labelText: 'Sectors',
+                    changeIcon: true,
+                    dialogTitle: 'Select Sector',
+                    dialogCancelBtn: 'CANCEL',
+                    enableSearch: true,
+                    dialogSearchHint: 'Search',
+                    items: _items,
+                    onChanged: (val) =>
+                        setState(() => _valueChanged = val),
+                    validator: (val) {
+                      setState(() => _valueToValidate = val ?? '');
+                      return null;
+                    },
+                    onSaved: (val) =>
+                        setState(() => _valueSaved = val ?? ''),
+                  ),
                   _entryField('Phone Number',_controllerNumber),
                   ElevatedButton(
                     onPressed: () {
@@ -185,6 +489,17 @@ class _LoginPageState extends State<LoginPage> {
             ),
             _submitButton(),
             _loginOrRegisterButton(),
+            ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SecondRoute()),
+                  );
+                },
+              child: const Text('Terms & Conditions',
+                  style: TextStyle(fontStyle: FontStyle.italic)
+              ),
+            ),
             Center(
               child: Text('Our support to the African SMEs is geared towards funding SMEs to enable value addition for import substitution, the phase which will unlock Africa\'s growth potential to catch up with the rest of the world.',
                 textAlign: TextAlign.center,
@@ -196,6 +511,19 @@ class _LoginPageState extends State<LoginPage> {
           ],
         ),),
       ),
+    );
+  }
+}
+
+
+class SecondRoute extends StatelessWidget {
+  const SecondRoute({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        body: SfPdfViewer.asset(
+            'assets/terms.pdf'),
     );
   }
 }
