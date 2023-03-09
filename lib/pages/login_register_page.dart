@@ -2,11 +2,67 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../auth.dart';
+
 import 'package:select_form_field/select_form_field.dart';
 import 'package:currency_picker/currency_picker.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+class AuthenticationService {
+  final _auth = FirebaseAuth.instance;
+//...
+}
+enum AuthStatus {
+  successful,
+  wrongPassword,
+  emailAlreadyExists,
+  invalidEmail,
+  weakPassword,
+  unknown,
+}
 
+class AuthExceptionHandler {
+  static handleAuthException(FirebaseAuthException e) {
+    AuthStatus status;
+    switch (e.code) {
+      case "invalid-email":
+        status = AuthStatus.invalidEmail;
+        break;
+      case "wrong-password":
+        status = AuthStatus.wrongPassword;
+        break;
+      case "weak-password":
+        status = AuthStatus.weakPassword;
+        break;
+      case "email-already-in-use":
+        status = AuthStatus.emailAlreadyExists;
+        break;
+      default:
+        status = AuthStatus.unknown;
+    }
+    return status;
+  }
+  static String generateErrorMessage(error) {
+    String errorMessage;
+    switch (error) {
+      case AuthStatus.invalidEmail:
+        errorMessage = "Your email address appears to be malformed.";
+        break;
+      case AuthStatus.weakPassword:
+        errorMessage = "Your password should be at least 6 characters.";
+        break;
+      case AuthStatus.wrongPassword:
+        errorMessage = "Your email or password is wrong.";
+        break;
+      case AuthStatus.emailAlreadyExists:
+        errorMessage =
+        "The email address is already in use by another account.";
+        break;
+      default:
+        errorMessage = "An error occured. Please try again later.";
+    }
+    return errorMessage;
+  }
+}
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
 
@@ -382,7 +438,14 @@ class _LoginPageState extends State<LoginPage> {
       child: Text(isLogin ? 'Login' : 'Register'),
     );
   }
-
+  Future<AuthStatus> resetPassword({required String email}) async {
+    AuthStatus _status = AuthStatus.successful;
+    await Auth()
+        .sendPasswordResetEmail(email: email)
+        .then((value) => _status = AuthStatus.successful)
+        .catchError((e) => _status = AuthExceptionHandler.handleAuthException(e));
+    return _status;
+  }
   Widget _loginOrRegisterButton() {
     return TextButton(
       onPressed: () {
@@ -399,6 +462,38 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
+
+  Widget _passwordResetButton() {
+    return TextButton(
+      onPressed: () {
+        showDialog<String>(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: const Text('Reset Password'),
+            content: _entryField('Email', _controllerEmail),
+            actions: <Widget>[
+
+              TextButton(
+                onPressed: () => {
+
+                  resetPassword(email:_controllerEmail.text),
+                  Navigator.pop(context, 'Submit'),
+                },
+                child: const Text('Submit'),
+              ),
+            ],
+          ),
+        );
+      },
+      child: Text(
+        "Forgot Password",
+        style: TextStyle(
+          color: Colors.blue,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -489,6 +584,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             _submitButton(),
             _loginOrRegisterButton(),
+            _passwordResetButton(),
             ElevatedButton(
                 onPressed: () {
                   Navigator.push(

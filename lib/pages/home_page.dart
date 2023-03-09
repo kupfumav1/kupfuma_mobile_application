@@ -19,7 +19,10 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import 'package:angles/angles.dart';
+import 'dart:math' as math;
 //import 'package:fluttertoast/fluttertoast.dart';
+final threeQuarterTurn = Angle.halfTurn() + Angle.degrees(180.0);
 
 String theDate = DateFormat.d().format(DateTime.now());
 String month = DateFormat.MMMM().format(DateTime.now());
@@ -72,7 +75,7 @@ class MenuItem {
 }
 
 class MenuItems {
-  static const List<MenuItem> firstItems = [home,guide, settings];
+  static const List<MenuItem> firstItems = [home,guide,reviseBudget, settings];
   static const List<MenuItem> secondItems = [logout];
 
   static const home =
@@ -81,7 +84,7 @@ class MenuItems {
   MenuItem(text: 'User Guide', icon: Icons.verified_user_rounded);
   static const settings = MenuItem(text: 'Reset', icon: Icons.delete_forever);
   static const logout = MenuItem(text: 'Log Out', icon: Icons.logout);
-
+  static const reviseBudget = MenuItem(text: 'Set Budgets', icon: Icons.money_off);
   static Widget buildItem(MenuItem item) {
     return Row(
       children: [
@@ -104,6 +107,7 @@ class MenuItems {
     String uid = user?.uid ?? 'uid';
     String email = user?.email ?? 'email';
     TextEditingController smeNameController = new TextEditingController();
+    TextEditingController userNameController = new TextEditingController();
     TextEditingController mainNumberController = new TextEditingController();
     String mainSme = "", number = "", key = "";
     late DatabaseReference reference;
@@ -113,6 +117,7 @@ class MenuItems {
       Map<String, String> revenue1 = {
         'sme': smeNameController.text,
         'number': mainNumberController.text,
+        'fname':userNameController.text
       };
       await reference.update(revenue1);
       Navigator.pop(context);
@@ -141,6 +146,7 @@ class MenuItems {
           mainSme = revenue['sme'];
 
           smeNameController.text = mainSme;
+          userNameController.text= revenue['fname'];
           // Step 2 <- SEE HERE
           mainNumberController.text = revenue['number'].toString();
           print('Key ' + key);
@@ -174,6 +180,16 @@ class MenuItems {
                     const SizedBox(
                       height: 25,
                     ),
+                    TextField(
+                      controller: userNameController,
+                      keyboardType: TextInputType.text,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'User Name',
+                        hintText: 'Enter User Name',
+                      ),
+                    ),
+                    const SizedBox(height: 15),
                     TextField(
                       controller: smeNameController,
                       keyboardType: TextInputType.text,
@@ -247,6 +263,91 @@ class MenuItems {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const GuideRoute()),
+        );
+
+        break;
+      case MenuItems.reviseBudget:
+        final salesTargetController = TextEditingController();
+        final actionPlanController = TextEditingController();
+        final revenueBudgetController = TextEditingController();
+        final fixedCostsController = TextEditingController();
+        final revenueTargetController = TextEditingController();
+        final expensesTargetController = TextEditingController();
+        showDialog<void>(
+          context: context,
+          barrierDismissible: false, // user must tap button!
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text(
+                'Revise Budget',
+                textAlign: TextAlign.center,
+              ),
+              content: SingleChildScrollView(
+                child: ListBody(
+                  children: <Widget>[
+                    TextField(
+                      controller: revenueBudgetController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Revenue Budget ',
+                        hintText: 'Enter Revenue Budget',
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    TextField(
+                      controller: fixedCostsController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Fixed Costs Budget',
+                        hintText: 'Enter Fixed Costs Budget',
+                      ),
+                    ),
+                    // const SizedBox(height: 15),
+                    // TextField(
+                    //   controller: revenueTargetController,
+                    //   keyboardType: TextInputType.number,
+                    //   decoration: const InputDecoration(
+                    //     border: OutlineInputBorder(),
+                    //     labelText: 'Revenue Target ',
+                    //     hintText: 'Enter Revenue Target',
+                    //   ),
+                    // ),
+                    const SizedBox(height: 15),
+                    TextField(
+                      controller: expensesTargetController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Daily Expenses Budget',
+                        hintText: 'Enter Daily Expenses Budget',
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('Save'),
+                  onPressed: () {
+                    Map<String, String> revenue = {
+                      'salesTarget': '',
+                      'actionPlan': '',
+                      'revenueBudget': revenueBudgetController.text,
+                      'fixedCosts': fixedCostsController.text,
+                      'revenueTarget': '',
+                      'expensesTarget': expensesTargetController.text
+                    };
+
+                    FirebaseDatabase.instance.ref().child('budgets/' + uid).push().set(revenue);
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
         );
 
         break;
@@ -338,7 +439,8 @@ class HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    //crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       ElevatedButton(
                           style: TextButton.styleFrom(
@@ -364,6 +466,18 @@ class HomePageState extends State<HomePage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('     Balance Sheet   ')),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text('     $threeQuarterTurn Business Advisory  ')),
                     ],
                   ),
                   const SizedBox(height: 15),
@@ -508,7 +622,7 @@ class HomePageState extends State<HomePage> {
     FirebaseDatabase.instance
         .ref()
         .child('trackExpenses/' + uid + '/' + actualMonthRef + "/")
-        .orderByChild('date')
+        .orderByChild('date').limitToLast(30)
         .onChildAdded
         .listen((event) {
       Map rev = event.snapshot.value as Map;
@@ -523,7 +637,7 @@ class HomePageState extends State<HomePage> {
     FirebaseDatabase.instance
         .ref()
         .child('trackRevenue/' + uid + '/' + actualMonthRef + "/")
-        .orderByChild('date')
+        .orderByChild('date').limitToLast(30)
         .onChildAdded
         .listen((event) {
       Map rev = event.snapshot.value as Map;
@@ -596,7 +710,7 @@ class HomePageState extends State<HomePage> {
         np = totalRevenue - totalExpenses;
         if (revenue['date'] == actualDate) {
           dailyExp += double.parse(revenue['amount']);
-          dailyCosts = dailyExp / totalExpenses;
+          dailyCosts = dailyExp / dailyExp;
         }
 
         fr = (fixedCosts / totalRevenue) * 100;
@@ -615,7 +729,7 @@ class HomePageState extends State<HomePage> {
   void getStudentData() async {
     String uid = user?.uid ?? 'uid';
     DataSnapshot snapshot = await dbRef.child('$uid').get();
-
+    final _formKey = GlobalKey<FormState>();
     Future<void> _showMyDialog() async {
       await Future.delayed(Duration(seconds: 2));
       return showDialog<void>(
@@ -627,10 +741,11 @@ class HomePageState extends State<HomePage> {
               'Hi, $sme. New month, new opportunities. Set your budgets for the month.',
               textAlign: TextAlign.center,
             ),
-            content: SingleChildScrollView(
+            content: SingleChildScrollView(child:Form(
+              key: _formKey,
               child: ListBody(
                 children: <Widget>[
-                  TextField(
+                  TextFormField(
                     controller: revenueBudgetController,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
@@ -638,9 +753,15 @@ class HomePageState extends State<HomePage> {
                       labelText: 'Revenue Budget ',
                       hintText: 'Enter Revenue Budget',
                     ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please Enter Revenue Budget';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 15),
-                  TextField(
+                  TextFormField(
                     controller: fixedCostsController,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
@@ -648,6 +769,12 @@ class HomePageState extends State<HomePage> {
                       labelText: 'Fixed Costs Budget',
                       hintText: 'Enter Fixed Costs Budget',
                     ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please Enter Fixed Costs Budget';
+                      }
+                      return null;
+                    },
                   ),
                   // const SizedBox(height: 15),
                   // TextField(
@@ -660,7 +787,7 @@ class HomePageState extends State<HomePage> {
                   //   ),
                   // ),
                   const SizedBox(height: 15),
-                  TextField(
+                  TextFormField(
                     controller: expensesTargetController,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
@@ -668,26 +795,38 @@ class HomePageState extends State<HomePage> {
                       labelText: 'Daily Expenses Budget',
                       hintText: 'Enter Daily Expenses Budget',
                     ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please Enter Daily Expenses Budget';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 15),
                 ],
               ),
-            ),
+            ),),
             actions: <Widget>[
               TextButton(
                 child: const Text('Save'),
                 onPressed: () {
-                  Map<String, String> revenue = {
-                    'salesTarget': '',
-                    'actionPlan': '',
-                    'revenueBudget': revenueBudgetController.text,
-                    'fixedCosts': fixedCostsController.text,
-                    'revenueTarget': '',
-                    'expensesTarget': expensesTargetController.text
-                  };
+                  if (_formKey.currentState!.validate()) {
+                    // If the form is valid, display a snackbar. In the real world,
+                    // you'd often call a server or save the information in a database.
 
-                  budget_reference.push().set(revenue);
-                  Navigator.of(context).pop();
+
+                    Map<String, String> revenue = {
+                      'salesTarget': '',
+                      'actionPlan': '',
+                      'revenueBudget': revenueBudgetController.text,
+                      'fixedCosts': fixedCostsController.text,
+                      'revenueTarget': '',
+                      'expensesTarget': expensesTargetController.text
+                    };
+
+                    budget_reference.push().set(revenue);
+                    Navigator.of(context).pop();
+                  };
                 },
               ),
             ],
@@ -1029,14 +1168,125 @@ class _SalesData {
   final double sales;
 }
 
-class SecondRoute extends StatelessWidget {
-  final User? user = Auth().currentUser;
+class SecondRoute extends StatefulWidget {
+  // ignore: prefer_const_constructors_in_immutables
+  //SecondRoute({Key? key}) : super(key: key);
+
+  SecondRoute(
+      {super.key,
+        required this.ky,
+        required this.amount,
+        required this.plan,
+        required this.comment,
+        required this.date,
+        required this.margin});
   final String amount;
   final String plan;
   final String comment;
   final String date;
   final String margin;
   final String ky;
+  final User? user = Auth().currentUser;
+  @override
+  //SecondRouteState createState() => SecondRouteState();
+  State<SecondRoute> createState() => SecondRouteState();
+}
+
+class SecondRouteState extends State<SecondRoute> {
+  int _selectedIndex = 1;
+
+  // Check if the user is signed in
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    switch (index) {
+      case 0:
+      // only scroll to top when current index is selected.
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => SignIn()));
+        break;
+      case 1:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => RevenuePage()));
+        break;
+      case 2:
+        showDialog<String>(
+          context: context,
+          builder: (BuildContext context) => Dialog(
+            alignment: Alignment.bottomCenter,
+            backgroundColor: Color.fromRGBO(0, 0, 0, 0.0),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Column(
+                    //crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => ISPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: const Text('Income Statement')),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => BSPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: const Text('     Balance Sheet   ')),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text('     $threeQuarterTurn Business Advisory  ')),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                ],
+              ),
+            ),
+          ),
+        );
+        break;
+      case 3:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => ExpensesPage()));
+        break;
+      case 4:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => FundingPage()));
+        break;
+    }
+  }
+  final User? user = Auth().currentUser;
+
+
+
+
   late DatabaseReference reference;
   String sme = '';
   String uid = '';
@@ -1044,14 +1294,7 @@ class SecondRoute extends StatelessWidget {
   // <-- Their email
 
   //const SecondRoute({super.key});
-  SecondRoute(
-      {super.key,
-      required this.ky,
-      required this.amount,
-      required this.plan,
-      required this.comment,
-      required this.date,
-      required this.margin});
+
 
   @override
   Widget build(BuildContext context) {
@@ -1066,7 +1309,7 @@ class SecondRoute extends StatelessWidget {
             Row(children: [
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(
-                  date,
+                  widget.date,
                   style: TextStyle(
                     color: Colors.grey[500],
                   ),
@@ -1078,7 +1321,7 @@ class SecondRoute extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  comment,
+                  widget.comment,
                   style: TextStyle(
                     color: Colors.grey[500],
                   ),
@@ -1089,7 +1332,7 @@ class SecondRoute extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '\$' + amount,
+                        '\$' + widget.amount,
                         style: TextStyle(
                           fontSize: 38,
                         ),
@@ -1105,7 +1348,7 @@ class SecondRoute extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            Text(margin + "%"),
+            Text(widget.margin + "%"),
             SizedBox(height: 50),
             Text(
               'Daily Comment',
@@ -1114,7 +1357,7 @@ class SecondRoute extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            Text(comment),
+            Text(widget.comment),
             SizedBox(height: 50),
             Text(
               'Key Action Plan',
@@ -1123,13 +1366,13 @@ class SecondRoute extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            Text(plan),
+            Text(widget.plan),
             SizedBox(height: 80),
             ElevatedButton(
               onPressed: () {
                 uid = user?.uid ?? 'uid';
                 reference =
-                    FirebaseDatabase.instance.ref("Revenue/" + uid + "/" + ky);
+                    FirebaseDatabase.instance.ref("Revenue/" + uid + "/" + widget.ky);
 
                 reference.remove();
                 Navigator.pop(context);
@@ -1145,188 +1388,162 @@ class SecondRoute extends StatelessWidget {
               },
               child: const Text('Go back!'),
             ),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    children: [
-                      TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => SignIn()),
-                            ); // Navigate back to first route when tapped.
-                          },
-                          child: const Icon(Icons.home)),
-                      //  const Text('Home')
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    children: [
-                      TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => RevenuePage()),
-                            ); // Navigate back to first route when tapped.
-                          },
-                          child: const Icon(Icons.wallet)),
-                      //const Text('Revenue')
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    children: [
-                      TextButton(
-                          onPressed: () => showDialog<String>(
-                                context: context,
-                                builder: (BuildContext context) => Dialog(
-                                  alignment: Alignment.bottomCenter,
-                                  backgroundColor: Color.fromRGBO(0, 0, 0, 0.0),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: <Widget>[
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            ElevatedButton(
-                                                style: TextButton.styleFrom(
-                                                  onSurface: Colors.white,
-                                                  backgroundColor: Colors.blue,
-                                                ),
-                                                onPressed: () {
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            ISPage()),
-                                                  ); // Navigate back to first route when tapped.
-                                                },
-                                                child: const Text(
-                                                    'Income Statement')),
-                                          ],
-                                        ),
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            ElevatedButton(
-                                                style: TextButton.styleFrom(
-                                                  onSurface: Colors.white,
-                                                  backgroundColor: Colors.blue,
-                                                ),
-                                                onPressed: () {
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            BSPage()),
-                                                  ); // Navigate back to first route when tapped.
-                                                },
-                                                child: const Text(
-                                                    'Balance Sheet')),
-                                          ],
-                                        ),
-                                        // Column(
-                                        //   crossAxisAlignment: CrossAxisAlignment.start,
-                                        //   children: [
-                                        //     ElevatedButton(
-                                        //         style: TextButton.styleFrom(
-                                        //           onSurface: Colors.white,
-                                        //           backgroundColor:Colors.blue,
-                                        //
-                                        //         ),
-                                        //         onPressed:() {
-                                        //           Navigator.push(
-                                        //             context,
-                                        //             MaterialPageRoute(builder: (context) => CFPage()),
-                                        //           );// Navigate back to first route when tapped.
-                                        //         }, child:const Text('Cash Flow')),
-                                        //   ],
-                                        // ),
-                                        const SizedBox(height: 15),
-                                        // TextButton(
-                                        // onPressed: () {
-                                        // Navigator.pop(context);
-                                        // },
-                                        // child: const Text('Close'),
-                                        // ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          child: const Icon(Icons.add_circle)),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    children: [
-                      TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => ExpensesPage()),
-                            ); // Navigate back to first route when tapped.
-                          },
-                          child: const Icon(Icons.pie_chart)),
-                      // const Text('Expenses')
-                    ],
-                  ),
-                ),
-                Column(
-                  children: [
-                    TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => FundingPage()),
-                          ); // Navigate back to first route when tapped.
-                        },
-                        child: const Icon(Icons.attach_money_sharp)),
-                    //  const Text('Funding')
-                  ],
-                ),
-              ],
-            ),
           ],
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.wallet),
+            label: 'Revenue',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add_circle),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.pie_chart),
+            label: 'Expenses',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.attach_money_sharp),
+            label: 'Funding',
+          ),
+        ],
+        currentIndex: 1,
+        selectedItemColor: Colors.amber[800],
+        unselectedItemColor: Colors.blue,
+        onTap: _onItemTapped,
       ),
     );
   }
 }
 
-class ThirdRoute extends StatelessWidget {
-  final User? user = Auth().currentUser;
+class ThirdRoute extends StatefulWidget {
+  // ignore: prefer_const_constructors_in_immutables
+  //SecondRoute({Key? key}) : super(key: key);
+
+  ThirdRoute(
+      {super.key,
+        required this.ky,
+        required this.amount,
+        required this.plan,
+        required this.comment,
+        required this.date,
+        required this.margin});
   final String amount;
   final String plan;
   final String comment;
   final String date;
   final String margin;
   final String ky;
+  final User? user = Auth().currentUser;
+  @override
+  //SecondRouteState createState() => SecondRouteState();
+  State<ThirdRoute> createState() => ThirdRouteState();
+}
+
+class ThirdRouteState extends State<ThirdRoute> {
+  int _selectedIndex = 3;
+
+  // Check if the user is signed in
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    switch (index) {
+      case 0:
+      // only scroll to top when current index is selected.
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => SignIn()));
+        break;
+      case 1:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => RevenuePage()));
+        break;
+      case 2:
+        showDialog<String>(
+          context: context,
+          builder: (BuildContext context) => Dialog(
+            alignment: Alignment.bottomCenter,
+            backgroundColor: Color.fromRGBO(0, 0, 0, 0.0),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Column(
+                    //crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => ISPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: const Text('Income Statement')),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => BSPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: const Text('     Balance Sheet   ')),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text('     $threeQuarterTurn Business Advisory  ')),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                ],
+              ),
+            ),
+          ),
+        );
+        break;
+      case 3:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => ExpensesPage()));
+        break;
+      case 4:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => FundingPage()));
+        break;
+    }
+  }
+
+
+  final User? user = Auth().currentUser;
   String uid = '';
   late DatabaseReference reference;
   //const SecondRoute({super.key});
-  ThirdRoute(
-      {super.key,
-      required this.ky,
-      required this.amount,
-      required this.plan,
-      required this.comment,
-      required this.date,
-      required this.margin});
+
 
   @override
   Widget build(BuildContext context) {
@@ -1341,17 +1558,17 @@ class ThirdRoute extends StatelessWidget {
             Row(children: [
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(
-                  date,
+                  widget.date,
                   style: TextStyle(
                     color: Colors.grey[500],
                   ),
                 ),
                 Text(
-                  plan,
+                  widget.plan,
                   style: TextStyle(),
                 ),
                 Text(
-                  comment,
+                  widget.comment,
                   style: TextStyle(
                     color: Colors.grey[500],
                   ),
@@ -1362,7 +1579,7 @@ class ThirdRoute extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '\$' + amount,
+                        '\$' + widget.amount,
                         style: TextStyle(
                           fontSize: 38,
                         ),
@@ -1378,7 +1595,7 @@ class ThirdRoute extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            Text(margin),
+            Text(widget.margin),
             SizedBox(height: 50),
             Text(
               'Expense Description',
@@ -1387,7 +1604,7 @@ class ThirdRoute extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            Text(comment),
+            Text(widget.comment),
             SizedBox(height: 50),
             Text(
               'Cartegory',
@@ -1396,13 +1613,13 @@ class ThirdRoute extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            Text(plan),
+            Text(widget.plan),
             SizedBox(height: 80),
             ElevatedButton(
               onPressed: () {
                 uid = user?.uid ?? 'uid';
                 reference =
-                    FirebaseDatabase.instance.ref("Expenses/" + uid + "/" + ky);
+                    FirebaseDatabase.instance.ref("Expenses/" + uid + "/" + widget.ky);
 
                 reference.remove();
                 Navigator.pop(context);
@@ -1418,164 +1635,37 @@ class ThirdRoute extends StatelessWidget {
               },
               child: const Text('Back!'),
             ),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    children: [
-                      TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => SignIn()),
-                            ); // Navigate back to first route when tapped.
-                          },
-                          child: const Icon(Icons.home)),
-                      //   const Text('Home')
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    children: [
-                      TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => RevenuePage()),
-                            ); // Navigate back to first route when tapped.
-                          },
-                          child: const Icon(Icons.wallet)),
-                      //  const Text('Revenue')
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    children: [
-                      TextButton(
-                          onPressed: () => showDialog<String>(
-                                context: context,
-                                builder: (BuildContext context) => Dialog(
-                                  alignment: Alignment.bottomCenter,
-                                  backgroundColor: Color.fromRGBO(0, 0, 0, 0.0),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: <Widget>[
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            ElevatedButton(
-                                                style: TextButton.styleFrom(
-                                                  onSurface: Colors.white,
-                                                  backgroundColor: Colors.blue,
-                                                ),
-                                                onPressed: () {
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            ISPage()),
-                                                  ); // Navigate back to first route when tapped.
-                                                },
-                                                child: const Text(
-                                                    'Income Statement')),
-                                          ],
-                                        ),
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            ElevatedButton(
-                                                style: TextButton.styleFrom(
-                                                  onSurface: Colors.white,
-                                                  backgroundColor: Colors.blue,
-                                                ),
-                                                onPressed: () {
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            BSPage()),
-                                                  ); // Navigate back to first route when tapped.
-                                                },
-                                                child: const Text(
-                                                    'Balance Sheet')),
-                                          ],
-                                        ),
-                                        // Column(
-                                        //   crossAxisAlignment: CrossAxisAlignment.start,
-                                        //   children: [
-                                        //     ElevatedButton(
-                                        //         style: TextButton.styleFrom(
-                                        //           onSurface: Colors.white,
-                                        //           backgroundColor:Colors.blue,
-                                        //
-                                        //         ),
-                                        //         onPressed:() {
-                                        //           Navigator.push(
-                                        //             context,
-                                        //             MaterialPageRoute(builder: (context) => CFPage()),
-                                        //           );// Navigate back to first route when tapped.
-                                        //         }, child:const Text('Cash Flow')),
-                                        //   ],
-                                        // ),
-                                        const SizedBox(height: 15),
-                                        // TextButton(
-                                        // onPressed: () {
-                                        // Navigator.pop(context);
-                                        // },
-                                        // child: const Text('Close'),
-                                        // ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          child: const Icon(Icons.add_circle)),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    children: [
-                      TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => ExpensesPage()),
-                            ); // Navigate back to first route when tapped.
-                          },
-                          child: const Icon(Icons.pie_chart)),
-                      //  const Text('Expenses')
-                    ],
-                  ),
-                ),
-                Column(
-                  children: [
-                    TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => FundingPage()),
-                          ); // Navigate back to first route when tapped.
-                        },
-                        child: const Icon(Icons.attach_money_sharp)),
-                    //  const Text('Funding')
-                  ],
-                ),
-              ],
-            ),
+
           ],
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.wallet),
+            label: 'Revenue',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add_circle),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.pie_chart),
+            label: 'Expenses',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.attach_money_sharp),
+            label: 'Funding',
+          ),
+        ],
+        currentIndex: 3,
+        selectedItemColor: Colors.amber[800],
+        unselectedItemColor: Colors.blue,
+        onTap: _onItemTapped,
       ),
     );
   }
@@ -1594,6 +1684,7 @@ class RevenuePageState extends State<RevenuePage> {
   final User? user = Auth().currentUser;
 
   int _selectedIndex = 1;
+
   // Check if the user is signed in
   void _onItemTapped(int index) {
     setState(() {
@@ -1622,7 +1713,8 @@ class RevenuePageState extends State<RevenuePage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    //crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       ElevatedButton(
                           style: TextButton.styleFrom(
@@ -1648,6 +1740,18 @@ class RevenuePageState extends State<RevenuePage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('     Balance Sheet   ')),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text('     $threeQuarterTurn Business Advisory   ')),
                     ],
                   ),
                   const SizedBox(height: 15),
@@ -1704,10 +1808,18 @@ class RevenuePageState extends State<RevenuePage> {
     print(currentValue.toString() + " IS THE AMOUNT CURRENT21");
   }
 
-  Future<void> updateMonthlyRevenue(amount, date) async {
+  Future<void> updateMonthlyRevenue(amount, date,cogs) async {
     double currentValue = 0, newValue = 0;
-    DatabaseReference refe;
+    double currentCOGS = 0, newCOGS = 0;
+    DatabaseReference refe,refe2,refe3;
     String uid = user?.uid ?? 'uid';
+    print("Zvakadzora naTocky");
+    refe3 = FirebaseDatabase.instance
+        .ref()
+        .child('Expenses/' + uid + '/'+date);
+    refe2 = FirebaseDatabase.instance
+        .ref()
+        .child('trackExpenses/' + uid + '/' + actualMonthRef + "/" + date);
     refe = FirebaseDatabase.instance
         .ref()
         .child('trackRevenue' + '/' + uid + '/' + actualMonthRef + "/" + date);
@@ -1719,15 +1831,19 @@ class RevenuePageState extends State<RevenuePage> {
         .listen((event) {
       Map rev = event.snapshot.value as Map;
       setState(() {
-        if (rev['date'] == date) currentValue = double.parse(rev['amount']);
+        if (rev['date'] == date) {
+          currentValue = double.parse(rev['amount']);
+          currentCOGS=double.parse(rev['cogs']);
+        }
         // rev['key'] = event.snapshot.key;
-
         print("date is  " + rev['date']);
       });
     });
 
-    await Future.delayed(Duration(seconds: 5));
+    await Future.delayed(Duration(seconds: 1));
+    print("Zvakadzora naTocky2");
     newValue = currentValue + double.parse(amount);
+    newCOGS = currentCOGS + cogs;
     print(currentValue.toString() +
         " IS THE AMOUNT CURRENT new Value is " +
         newValue.toString());
@@ -1735,9 +1851,22 @@ class RevenuePageState extends State<RevenuePage> {
     Map<String, String> trackRevenue = {
       'amount': newValue.toString(),
       'date': date,
+      'cogs':newCOGS.toString(),
     };
+    Map<String, String> trackExp = {
 
+      'cogs':newCOGS.toString(),
+    };
+    Map<String, String> addToExpense = {
+      'amount': newCOGS.toString(),
+      'margin': 'COGS',
+      'date': date,
+      'comment': 'COGS',
+      'plan': 'COGS',
+    };
     refe.set(trackRevenue);
+   refe2.update(trackExp);
+    refe3.update(addToExpense);
   }
 
   Future<void> morningMessage() async {
@@ -1758,6 +1887,8 @@ class RevenuePageState extends State<RevenuePage> {
     DatabaseReference dbRefe = FirebaseDatabase.instance.ref().child(
         'trackMorningMessage/' + uid + '/' + actualMonthRef + '/' + actualDate);
     DataSnapshot snapshot = await dbRefe.get();
+
+
 
     if (snapshot.value == null) {
       print("Item doesn't exist in the db");
@@ -1849,7 +1980,7 @@ class RevenuePageState extends State<RevenuePage> {
     FirebaseDatabase.instance
         .ref()
         .child('trackRevenue/' + uid + '/' + actualMonthRef + "/")
-        .orderByChild('date')
+        .orderByChild('date').limitToLast(30)
         .onChildAdded
         .listen((event) {
       Map rev = event.snapshot.value as Map;
@@ -1889,7 +2020,7 @@ class RevenuePageState extends State<RevenuePage> {
     FirebaseDatabase.instance
         .ref()
         .child('Revenue/' + uid)
-        .orderByChild("date")
+        .orderByChild("date").limitToLast(30)
         .onChildAdded
         .listen((event) {
       Map revenue = event.snapshot.value as Map;
@@ -1975,7 +2106,7 @@ class RevenuePageState extends State<RevenuePage> {
               ),
             ])));
   }
-
+  final _formKey = GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) {
     Color insightColor2 = Colors.blue;
@@ -2142,6 +2273,215 @@ class RevenuePageState extends State<RevenuePage> {
               ],
             ),
           ),
+          ElevatedButton(
+            onPressed: () => showDialog<String>(
+              context: context,
+              builder: (BuildContext context) => Dialog(
+                child:Form(
+                  key: _formKey,
+                  child: ListView(
+                    padding: const EdgeInsets.all(8.0),
+                    children: [
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          const SizedBox(
+                            height: 20,
+                          ),
+                          const Text(
+                            'Daily Revenue',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 25,
+                          ),
+                          TextFormField(
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Missing Required Field';
+                              }
+                              return null;
+                            },
+                            controller: amountController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'Amount \$',
+                              hintText: 'Enter Amount',
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+                          TextFormField(
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Missing Required Field';
+                              }
+                              return null;
+                            },
+                            controller: marginController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'Margin',
+                              hintText: 'Enter Gross Margin %',
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+                          TextfieldDatePicker(
+                            cupertinoDatePickerBackgroundColor: Colors.white,
+                            cupertinoDatePickerMaximumDate: DateTime.now(),
+                            cupertinoDatePickerMaximumYear: 2023,
+                            cupertinoDatePickerMinimumYear: 1990,
+                            cupertinoDatePickerMinimumDate: DateTime(1990),
+                            cupertinoDateInitialDateTime: DateTime.now(),
+                            materialDatePickerFirstDate: DateTime(2021),
+                            materialDatePickerInitialDate: DateTime.now(),
+                            materialDatePickerLastDate: DateTime.now(),
+                            preferredDateFormat: DateFormat('dd-MMMM-' 'yyyy'),
+                            onSaved: getDateValue(dateController.text),
+                            textfieldDatePickerController: dateController,
+                            style: TextStyle(
+                              fontSize: 1000 * 0.040,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.black,
+                            ),
+                            textCapitalization: TextCapitalization.sentences,
+                            cursorColor: Colors.black,
+                            decoration: InputDecoration(
+                              //errorText: errorTextValue,onSaved
+                              helperStyle: TextStyle(
+                                  fontSize: 1000 * 0.031,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.grey),
+                              focusedBorder: OutlineInputBorder(
+                                  borderSide: const BorderSide(
+                                      color: Colors.white, width: 0),
+                                  borderRadius: BorderRadius.circular(2)),
+                              enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(2),
+                                  borderSide: const BorderSide(
+                                    width: 0,
+                                    color: Colors.white,
+                                  )),
+                              hintText: 'Select Date Received',
+                              hintStyle: TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.bold),
+                              filled: true,
+                              fillColor: Colors.blue,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+                          TextFormField(
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Missing Required Field';
+                              }
+                              return null;
+                            },
+                            controller: commentController,
+                            keyboardType: TextInputType.multiline,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'Daily Comment',
+                              hintText: 'Enter Daily Comment',
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+                          TextFormField(
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Missing Required Field';
+                              }
+                              return null;
+                            },
+                            controller: planController,
+                            keyboardType: TextInputType.multiline,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'Key Action Plan',
+                              hintText: 'Enter Key Action Plan',
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              MaterialButton(
+                                // style: TextButton.styleFrom(
+                                //   onSurface: Colors.white,
+                                //   backgroundColor:Colors.blue,
+                                //     minimumSize: const Size.fromHeight(50),
+                                //
+                                // ),
+                                onPressed: () {
+                                  if (_formKey.currentState!.validate()){
+                                    Map<String, String> revenue = {
+                                      'amount': amountController.text,
+                                      'margin': marginController.text,
+                                      'date': dateController.text,
+                                      'comment': commentController.text,
+                                      'plan': planController.text
+                                    };
+
+                                    Map<String, String> trackRevenue = {
+                                      dateController.text: amountController.text,
+                                    };
+                                    double amo=double.parse(amountController.text);
+                                    double margi=(100-double.parse(marginController.text))/100;
+                                    double cogs=amo*margi;
+                                    updateMonthlyRevenue(
+                                        amountController.text, dateController.text,cogs);
+
+                                    reference.push().set(revenue);
+                                    //reference1.set(trackRevenue);
+
+                                    Navigator.pop(context);
+                                  }
+                                },
+                                child: const Text('Save'),
+                                color: Colors.blue,
+                                textColor: Colors.white,
+                                minWidth: 300,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 15),
+                          const SizedBox(height: 15),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ElevatedButton(
+                                  style: TextButton.styleFrom(
+                                    onSurface: Colors.white,
+                                    backgroundColor: Colors.red,
+                                    minimumSize: const Size.fromHeight(50),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text('Close')),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),),
+              ),
+            ),
+            child: const Text('Add Daily Revenue'),
+            style: ElevatedButton.styleFrom(
+              primary: Colors.blue,
+              backgroundColor: Colors.blue,
+              minimumSize: const Size.fromHeight(50), // NEW
+            ),
+          ),
           SingleChildScrollView(
             child: Column(
               children: [
@@ -2162,185 +2502,7 @@ class RevenuePageState extends State<RevenuePage> {
           const SizedBox(
             height: 30, // <-- SEE HERE
           ),
-          ElevatedButton(
-            onPressed: () => showDialog<String>(
-              context: context,
-              builder: (BuildContext context) => Dialog(
-                child: ListView(
-                  padding: const EdgeInsets.all(8.0),
-                  children: [
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        const Text(
-                          'Daily Revenue',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 25,
-                        ),
-                        TextField(
-                          controller: amountController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Amount \$',
-                            hintText: 'Enter Amount',
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        TextField(
-                          controller: marginController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Margin',
-                            hintText: 'Enter Gross Margin %',
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        TextfieldDatePicker(
-                          cupertinoDatePickerBackgroundColor: Colors.white,
-                          cupertinoDatePickerMaximumDate: DateTime.now(),
-                          cupertinoDatePickerMaximumYear: 2023,
-                          cupertinoDatePickerMinimumYear: 1990,
-                          cupertinoDatePickerMinimumDate: DateTime(1990),
-                          cupertinoDateInitialDateTime: DateTime.now(),
-                          materialDatePickerFirstDate: DateTime(2021),
-                          materialDatePickerInitialDate: DateTime.now(),
-                          materialDatePickerLastDate: DateTime.now(),
-                          preferredDateFormat: DateFormat('dd-MMMM-' 'yyyy'),
-                          onSaved: getDateValue(dateController.text),
-                          textfieldDatePickerController: dateController,
-                          style: TextStyle(
-                            fontSize: 1000 * 0.040,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.black,
-                          ),
-                          textCapitalization: TextCapitalization.sentences,
-                          cursorColor: Colors.black,
-                          decoration: InputDecoration(
-                            //errorText: errorTextValue,onSaved
-                            helperStyle: TextStyle(
-                                fontSize: 1000 * 0.031,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.grey),
-                            focusedBorder: OutlineInputBorder(
-                                borderSide: const BorderSide(
-                                    color: Colors.white, width: 0),
-                                borderRadius: BorderRadius.circular(2)),
-                            enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(2),
-                                borderSide: const BorderSide(
-                                  width: 0,
-                                  color: Colors.white,
-                                )),
-                            hintText: 'Select Date Received',
-                            hintStyle: TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.bold),
-                            filled: true,
-                            fillColor: Colors.blue,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.0),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        TextField(
-                          controller: commentController,
-                          keyboardType: TextInputType.multiline,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Daily Comment',
-                            hintText: 'Enter Daily Comment',
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        TextField(
-                          controller: planController,
-                          keyboardType: TextInputType.multiline,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Key Action Plan',
-                            hintText: 'Enter Key Action Plan',
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            MaterialButton(
-                              // style: TextButton.styleFrom(
-                              //   onSurface: Colors.white,
-                              //   backgroundColor:Colors.blue,
-                              //     minimumSize: const Size.fromHeight(50),
-                              //
-                              // ),
-                              onPressed: () {
-                                Map<String, String> revenue = {
-                                  'amount': amountController.text,
-                                  'margin': marginController.text,
-                                  'date': dateController.text,
-                                  'comment': commentController.text,
-                                  'plan': planController.text
-                                };
 
-                                Map<String, String> trackRevenue = {
-                                  dateController.text: amountController.text,
-                                };
-
-                                updateMonthlyRevenue(
-                                    amountController.text, dateController.text);
-
-                                reference.push().set(revenue);
-                                //reference1.set(trackRevenue);
-
-                                Navigator.pop(context);
-                              },
-                              child: const Text('Save'),
-                              color: Colors.blue,
-                              textColor: Colors.white,
-                              minWidth: 300,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 15),
-                        const SizedBox(height: 15),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ElevatedButton(
-                                style: TextButton.styleFrom(
-                                  onSurface: Colors.white,
-                                  backgroundColor: Colors.red,
-                                  minimumSize: const Size.fromHeight(50),
-                                ),
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                child: const Text('Close')),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            child: const Text('Add Daily Revenue'),
-            style: ElevatedButton.styleFrom(
-              primary: Colors.blue,
-              backgroundColor: Colors.blue,
-              minimumSize: const Size.fromHeight(50), // NEW
-            ),
-          ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -2415,7 +2577,8 @@ class FundingPageState extends State<FundingPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    //crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       ElevatedButton(
                           style: TextButton.styleFrom(
@@ -2441,6 +2604,18 @@ class FundingPageState extends State<FundingPage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('     Balance Sheet   ')),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text('     $threeQuarterTurn Business Advisory   ')),
                     ],
                   ),
                   const SizedBox(height: 15),
@@ -3000,7 +3175,8 @@ class ExpensesPageState extends State<ExpensesPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    //crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       ElevatedButton(
                           style: TextButton.styleFrom(
@@ -3026,6 +3202,18 @@ class ExpensesPageState extends State<ExpensesPage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('     Balance Sheet   ')),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text('     $threeQuarterTurn Business Advisory   ')),
                     ],
                   ),
                   const SizedBox(height: 15),
@@ -3178,7 +3366,7 @@ class ExpensesPageState extends State<ExpensesPage> {
       });
     });
 
-    await Future.delayed(Duration(seconds: 2));
+    await Future.delayed(Duration(seconds: 1));
     FirebaseDatabase.instance
         .ref()
         .child('trackExpenses/' + uid + '/' + actualMonthRef + "/")
@@ -3196,7 +3384,7 @@ class ExpensesPageState extends State<ExpensesPage> {
       });
     });
 
-    await Future.delayed(Duration(seconds: 5));
+    await Future.delayed(Duration(seconds: 1));
     newValue = currentValue + double.parse(amount);
     cartNewValue = cartValue + double.parse(amount);
     print(currentValue.toString() +
@@ -3238,17 +3426,17 @@ class ExpensesPageState extends State<ExpensesPage> {
     FirebaseDatabase.instance
         .ref()
         .child('trackExpenses/' + uid + '/' + actualMonthRef + "/")
-        .orderByChild('date')
+        .orderByChild('date').limitToLast(30)
         .onChildAdded
         .listen((event) {
       Map rev = event.snapshot.value as Map;
       setState(() {
         if (rev['date'] == actualDate) {
-          dailyExp += double.parse(rev['amount']);
+          dailyExp += double.parse(rev['amount'])+double.parse(rev['cogs']);
         }
 
         data2.add(_SalesData(
-            rev['date'].substring(0, 2), double.parse(rev['amount'])));
+            rev['date'].substring(0, 2), double.parse(rev['amount'])+double.parse(rev['cogs'])));
         data.add(_SalesData(rev['date'].substring(0, 2), fixedCosts));
       });
     });
@@ -3347,7 +3535,7 @@ class ExpensesPageState extends State<ExpensesPage> {
               ),
             ])));
   }
-
+  final _formKey = GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) {
     Color insightColor2 = Colors.blue;
@@ -3464,7 +3652,7 @@ class ExpensesPageState extends State<ExpensesPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Revenue'),
+                Text('Expenses'),
                 Icon(Icons.square, color: Colors.blue),
                 Text('Fixed Costs'),
                 Icon(Icons.square, color: Colors.grey),
@@ -3514,6 +3702,224 @@ class ExpensesPageState extends State<ExpensesPage> {
               ],
             ),
           ),
+          ElevatedButton(
+            onPressed: () => showDialog<String>(
+              context: context,
+              builder: (BuildContext context) => Dialog(
+                child:Form(
+                  key: _formKey,
+                  child: ListView(
+                    padding: const EdgeInsets.all(8.0),
+                    children: [
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          const SizedBox(
+                            height: 20,
+                          ),
+                          const Text(
+                            'Daily Expenses',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 25,
+                          ),
+                          SelectFormField(
+
+                            type: SelectFormFieldType.dialog,
+                            controller: planController,
+                            //initialValue: _initialValue,
+                            icon: Icon(Icons.format_shapes),
+                            labelText: 'Category',
+                            changeIcon: true,
+                            dialogTitle: 'Expense Category',
+                            dialogCancelBtn: 'CANCEL',
+                            enableSearch: true,
+                            dialogSearchHint: 'Search',
+                            items: _items,
+                            onChanged: (val) =>
+                                setState(() => _valueChanged = val),
+                            validator: (val) {
+                              setState(() => _valueToValidate = val ?? '');
+                              return null;
+                            },
+                            onSaved: (val) =>
+                                setState(() => _valueSaved = val ?? ''),
+                          ),
+
+                          TextFormField(
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Field Required';
+                              }
+                              return null;
+                            },
+                            controller: amountController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'Amount \$',
+                              hintText: 'Enter Amount',
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+                          TextFormField(
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Field Required';
+                              }
+                              return null;
+                            },
+                            controller: marginController,
+                            keyboardType: TextInputType.text,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'Expense Title',
+                              hintText: 'Enter Expense Title',
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+                          // TextField(
+                          //   controller: dateController,
+                          //   keyboardType: TextInputType.datetime,
+                          //   decoration: const InputDecoration(
+                          //     border: OutlineInputBorder(),
+                          //     labelText: 'Date Paid dd-mm-yyyy',
+                          //     hintText: 'Select Date Paid dd-mm-yyyy',
+                          //   ),),
+                          TextfieldDatePicker(
+                            cupertinoDatePickerBackgroundColor: Colors.white,
+                            cupertinoDatePickerMaximumDate: DateTime(2099),
+                            cupertinoDatePickerMaximumYear: 2099,
+                            cupertinoDatePickerMinimumYear: 1990,
+                            cupertinoDatePickerMinimumDate: DateTime(1990),
+                            cupertinoDateInitialDateTime: DateTime.now(),
+                            materialDatePickerFirstDate: DateTime(2022),
+                            materialDatePickerInitialDate: DateTime.now(),
+                            materialDatePickerLastDate: DateTime.now(),
+                            preferredDateFormat: DateFormat('dd-MMMM-' 'yyyy'),
+                            textfieldDatePickerController: dateController,
+                            style: TextStyle(
+                              fontSize: 1000 * 0.040,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.black,
+                            ),
+                            textCapitalization: TextCapitalization.sentences,
+                            cursorColor: Colors.black,
+                            decoration: InputDecoration(
+                              //errorText: errorTextValue,
+                              helperStyle: TextStyle(
+                                  fontSize: 1000 * 0.031,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.grey),
+                              focusedBorder: OutlineInputBorder(
+                                  borderSide: const BorderSide(
+                                      color: Colors.white, width: 0),
+                                  borderRadius: BorderRadius.circular(2)),
+                              enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(2),
+                                  borderSide: const BorderSide(
+                                    width: 0,
+                                    color: Colors.white,
+                                  )),
+                              hintText: 'Select Paid Date',
+                              hintStyle: TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.bold),
+                              filled: true,
+                              fillColor: Colors.grey[300],
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+                          TextFormField(
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Field Required';
+                              }
+                              return null;
+                            },
+                            controller: commentController,
+                            keyboardType: TextInputType.multiline,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'Expense Description',
+                              hintText: 'Enter Expense Description',
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+
+                          const SizedBox(height: 15),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              MaterialButton(
+                                // style: TextButton.styleFrom(
+                                //   onSurface: Colors.white,
+                                //   backgroundColor:Colors.blue,
+                                //     minimumSize: const Size.fromHeight(50),
+                                //
+                                // ),
+                                onPressed: () {
+                                  if (_formKey.currentState!.validate()) {
+                                    Map<String, String> revenue = {
+                                      'amount': amountController.text,
+                                      'margin': marginController.text,
+                                      'date': dateController.text,
+                                      'comment': commentController.text,
+                                      'plan': planController.text
+                                    };
+
+                                    updateMonthlyExpenses(amountController.text,
+                                        dateController.text, planController.text);
+                                    reference.push().set(revenue);
+
+                                    Navigator.pop(context);
+                                  };
+                                },
+                                child: const Text('Save'),
+                                color: Colors.blue,
+                                textColor: Colors.white,
+                                minWidth: 300,
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 15),
+                          const SizedBox(height: 15),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ElevatedButton(
+                                  style: TextButton.styleFrom(
+                                    onSurface: Colors.white,
+                                    backgroundColor: Colors.red,
+                                    minimumSize: const Size.fromHeight(50),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text('Close')),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),),
+              ),
+            ),
+            child: const Text('Add Daily Expenses'),
+            style: ElevatedButton.styleFrom(
+              primary: Colors.blue,
+              backgroundColor: Colors.blue,
+              minimumSize: const Size.fromHeight(50), // NEW
+            ),
+          ),
           SingleChildScrollView(
             child: Column(
               children: [
@@ -3534,201 +3940,7 @@ class ExpensesPageState extends State<ExpensesPage> {
           SizedBox(
             height: 110, // <-- SEE HERE
           ),
-          ElevatedButton(
-            onPressed: () => showDialog<String>(
-              context: context,
-              builder: (BuildContext context) => Dialog(
-                child: ListView(
-                  padding: const EdgeInsets.all(8.0),
-                  children: [
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        const Text(
-                          'Daily Expenses',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 25,
-                        ),
-                        SelectFormField(
-                          type: SelectFormFieldType.dialog,
-                          controller: planController,
-                          //initialValue: _initialValue,
-                          icon: Icon(Icons.format_shapes),
-                          labelText: 'Category',
-                          changeIcon: true,
-                          dialogTitle: 'Expense Category',
-                          dialogCancelBtn: 'CANCEL',
-                          enableSearch: true,
-                          dialogSearchHint: 'Search',
-                          items: _items,
-                          onChanged: (val) =>
-                              setState(() => _valueChanged = val),
-                          validator: (val) {
-                            setState(() => _valueToValidate = val ?? '');
-                            return null;
-                          },
-                          onSaved: (val) =>
-                              setState(() => _valueSaved = val ?? ''),
-                        ),
 
-                        TextField(
-                          controller: amountController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Amount \$',
-                            hintText: 'Enter Amount',
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        TextField(
-                          controller: marginController,
-                          keyboardType: TextInputType.text,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Expense Title',
-                            hintText: 'Enter Expense Title',
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        // TextField(
-                        //   controller: dateController,
-                        //   keyboardType: TextInputType.datetime,
-                        //   decoration: const InputDecoration(
-                        //     border: OutlineInputBorder(),
-                        //     labelText: 'Date Paid dd-mm-yyyy',
-                        //     hintText: 'Select Date Paid dd-mm-yyyy',
-                        //   ),),
-                        TextfieldDatePicker(
-                          cupertinoDatePickerBackgroundColor: Colors.white,
-                          cupertinoDatePickerMaximumDate: DateTime(2099),
-                          cupertinoDatePickerMaximumYear: 2099,
-                          cupertinoDatePickerMinimumYear: 1990,
-                          cupertinoDatePickerMinimumDate: DateTime(1990),
-                          cupertinoDateInitialDateTime: DateTime.now(),
-                          materialDatePickerFirstDate: DateTime(2022),
-                          materialDatePickerInitialDate: DateTime.now(),
-                          materialDatePickerLastDate: DateTime.now(),
-                          preferredDateFormat: DateFormat('dd-MMMM-' 'yyyy'),
-                          textfieldDatePickerController: dateController,
-                          style: TextStyle(
-                            fontSize: 1000 * 0.040,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.black,
-                          ),
-                          textCapitalization: TextCapitalization.sentences,
-                          cursorColor: Colors.black,
-                          decoration: InputDecoration(
-                            //errorText: errorTextValue,
-                            helperStyle: TextStyle(
-                                fontSize: 1000 * 0.031,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.grey),
-                            focusedBorder: OutlineInputBorder(
-                                borderSide: const BorderSide(
-                                    color: Colors.white, width: 0),
-                                borderRadius: BorderRadius.circular(2)),
-                            enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(2),
-                                borderSide: const BorderSide(
-                                  width: 0,
-                                  color: Colors.white,
-                                )),
-                            hintText: 'Select Paid Date',
-                            hintStyle: TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.bold),
-                            filled: true,
-                            fillColor: Colors.grey[300],
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.0),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        TextField(
-                          controller: commentController,
-                          keyboardType: TextInputType.multiline,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Expense Description',
-                            hintText: 'Enter Expense Description',
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-
-                        const SizedBox(height: 15),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            MaterialButton(
-                              // style: TextButton.styleFrom(
-                              //   onSurface: Colors.white,
-                              //   backgroundColor:Colors.blue,
-                              //     minimumSize: const Size.fromHeight(50),
-                              //
-                              // ),
-                              onPressed: () {
-                                Map<String, String> revenue = {
-                                  'amount': amountController.text,
-                                  'margin': marginController.text,
-                                  'date': dateController.text,
-                                  'comment': commentController.text,
-                                  'plan': planController.text
-                                };
-
-                                updateMonthlyExpenses(amountController.text,
-                                    dateController.text, planController.text);
-                                reference.push().set(revenue);
-
-                                Navigator.pop(context);
-                              },
-                              child: const Text('Save'),
-                              color: Colors.blue,
-                              textColor: Colors.white,
-                              minWidth: 300,
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 15),
-                        const SizedBox(height: 15),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ElevatedButton(
-                                style: TextButton.styleFrom(
-                                  onSurface: Colors.white,
-                                  backgroundColor: Colors.red,
-                                  minimumSize: const Size.fromHeight(50),
-                                ),
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                child: const Text('Close')),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            child: const Text('Add Daily Expenses'),
-            style: ElevatedButton.styleFrom(
-              primary: Colors.blue,
-              backgroundColor: Colors.blue,
-              minimumSize: const Size.fromHeight(50), // NEW
-            ),
-          ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -3819,7 +4031,8 @@ class ISPageState extends State<ISPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    //crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       ElevatedButton(
                           style: TextButton.styleFrom(
@@ -3845,6 +4058,18 @@ class ISPageState extends State<ISPage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('     Balance Sheet   ')),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text('     $threeQuarterTurn Business Advisory   ')),
                     ],
                   ),
                   const SizedBox(height: 15),
@@ -5217,7 +5442,8 @@ class BSPageState extends State<BSPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    //crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       ElevatedButton(
                           style: TextButton.styleFrom(
@@ -5243,6 +5469,18 @@ class BSPageState extends State<BSPage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('     Balance Sheet   ')),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text('     $threeQuarterTurn Business Advisory   ')),
                     ],
                   ),
                   const SizedBox(height: 15),
@@ -6212,6 +6450,667 @@ class CFPageState extends State<CFPage> {
             ), //See Description Below for the other arguments of the Footer Component
           ),
           flex: 8),
+    );
+  }
+}
+
+class AdvisoryPage extends StatefulWidget {
+  // ignore: prefer_const_constructors_in_immutables
+  AdvisoryPage({Key? key}) : super(key: key);
+  final User? user = Auth().currentUser;
+
+  @override
+  AdvisoryPageState createState() => AdvisoryPageState();
+}
+
+class AdvisoryPageState extends State<AdvisoryPage> {
+  final User? user = Auth().currentUser;
+
+  int _selectedIndex = 2;
+  TextEditingController areaController = new TextEditingController();
+  TextEditingController agendaController = new TextEditingController();
+  TextEditingController descController = new TextEditingController();
+  TextEditingController attendingController = new TextEditingController();
+
+
+
+  late DatabaseReference advisory_reference;
+  Future<void> _showMyDialog() async {
+    String uid = user?.uid ?? 'uid';
+    advisory_reference= FirebaseDatabase.instance.ref().child('advisory/' + uid);
+    //await Future.delayed(Duration(seconds: 2));
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            '  360° Advisory      ',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                backgroundColor: Colors.blue,
+                color:Colors.white,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                TextField(
+                  controller: areaController,
+                  keyboardType: TextInputType.text,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Key Area',
+                    hintText: 'Enter Key Area You Need Help',
+                  ),
+                ),
+                const SizedBox(height: 15),
+                TextField(
+                  controller: agendaController,
+                  keyboardType: TextInputType.text,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Agenda',
+                    hintText: 'What is the Agenda',
+                  ),
+                ),
+                const SizedBox(height: 15),
+                TextField(
+                  controller: descController,
+                  keyboardType: TextInputType.multiline,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Briefly describe the Agenda.. ',
+                    hintText: 'Agenda Description',
+                  ),
+                ),
+                const SizedBox(height: 15),
+                TextField(
+                  controller: attendingController,
+                  keyboardType: TextInputType.text,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Attending',
+                    hintText: 'Who is attending??',
+                  ),
+                ),
+                const SizedBox(height: 15),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Select Date & Time'),
+              onPressed: () {
+                Map<String, String> revenue = {
+                  'attending': attendingController.text,
+                  'description': descController.text,
+                  'agenda': agendaController.text,
+                  'area': areaController.text
+                };
+
+                advisory_reference.push().set(revenue);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+  // Check if the user is signed in
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    switch (index) {
+      case 0:
+      // only scroll to top when current index is selected.
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => SignIn()));
+        break;
+      case 1:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => RevenuePage()));
+        break;
+      case 2:
+        showDialog<String>(
+          context: context,
+          builder: (BuildContext context) => Dialog(
+            alignment: Alignment.bottomCenter,
+            backgroundColor: Color.fromRGBO(0, 0, 0, 0.0),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Column(
+                    //crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => ISPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: const Text('Income Statement')),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => BSPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: const Text('     Balance Sheet   ')),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text('     $threeQuarterTurn Business Advisory   ')),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                ],
+              ),
+            ),
+          ),
+        );
+        break;
+      case 3:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => ExpensesPage()));
+        break;
+      case 4:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => FundingPage()));
+        break;
+    }
+  }
+
+  List<_SalesData> data = [];
+  List<_SalesData> data2 = [];
+
+  double totalRevenue = 0;
+  double averageRevenue = 0;
+  double percentageRevenue = 0;
+  int countRevenue = 0;
+  double budget = 0, dailyRev = 0;
+
+  final amountController = TextEditingController();
+  final marginController = TextEditingController();
+  final dateController = TextEditingController();
+  final commentController = TextEditingController();
+  final planController = TextEditingController();
+  final Color unselectedItemColor = Colors.blue;
+  late Query dbRef;
+  late DatabaseReference reference, reference1;
+  String currentValue = '0';
+  String sme = '';
+
+  getDateValue(date) {
+    String uid = user?.uid ?? 'uid';
+    FirebaseDatabase.instance
+        .ref()
+        .child('trackRevenue/' + uid + '/' + actualMonthRef + "/")
+        .onChildAdded
+        .listen((event) {
+      Map rev = event.snapshot.value as Map;
+      currentValue = rev['amount'];
+      // rev['key'] = event.snapshot.key;
+      print(currentValue.toString() + " IS THE AMOUNT CURRENT");
+    });
+
+    print(currentValue.toString() + " IS THE AMOUNT CURRENT21");
+  }
+
+
+
+  Future<void> morningMessage() async {
+    String uid = user?.uid ?? 'uid';
+    double budget = 0;
+    FirebaseDatabase.instance
+        .ref()
+        .child('budgets/' + uid)
+        .onChildAdded
+        .listen((event) {
+      Map revenue = event.snapshot.value as Map;
+
+      setState(() {
+        budget = double.parse(revenue['revenueBudget']) / 30;
+      });
+    });
+    await Future.delayed(Duration(seconds: 1));
+    DatabaseReference dbRefe = FirebaseDatabase.instance.ref().child(
+        'trackMorningMessage/' + uid + '/' + actualMonthRef + '/' + actualDate);
+    DataSnapshot snapshot = await dbRefe.get();
+
+    if (snapshot.value == null) {
+      print("Item doesn't exist in the db");
+      Map<String, String> cartegories = {
+        'Advertising': '0',
+      };
+
+      showDialog<String>(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Rise and shine.'),
+          content: Text(
+              'New day! New opportunities! Your revenue target for today is \$' +
+                  budget.toStringAsFixed(2)),
+          actions: <Widget>[
+            // TextButton(
+            //   onPressed: () =>{ Navigator.pop(context, 'No')},
+            //   child: const Text('No'),
+            // ),
+            TextButton(
+              onPressed: () => {
+                dbRefe.set(cartegories),
+                Navigator.pop(context, 'No'),
+              },
+              child: const Text('Noted. Thank You.'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      print("Item exists in the db snap $snapshot");
+    }
+
+    Timer mytimer = Timer.periodic(Duration(seconds: 1800), (timer) {
+      if (snapshot.value == null) {
+        print("Item doesn't exist in the db");
+        Map<String, String> cartegories = {
+          'Advertising': '0',
+        };
+
+        showDialog<String>(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: const Text('Rise and shine.'),
+            content: Text(
+                'New day! New opportunities! Your revenue target for today is \$' +
+                    budget.toStringAsFixed(2)),
+            actions: <Widget>[
+              // TextButton(
+              //   onPressed: () =>{ Navigator.pop(context, 'No')},
+              //   child: const Text('No'),
+              // ),
+              TextButton(
+                onPressed: () => {
+                  dbRefe.set(cartegories),
+                  Navigator.pop(context, 'No'),
+                },
+                child: const Text('Noted. Thank You.'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        print("Item exists in the db snap $snapshot");
+      }
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    String uid = user?.uid ?? 'uid'; // <-- Their email
+    String mail = user?.email ?? 'email';
+
+    morningMessage();
+
+    FirebaseDatabase.instance
+        .ref()
+        .child('budgets/' + uid)
+        .onChildAdded
+        .listen((event) {
+      Map revenue = event.snapshot.value as Map;
+
+      setState(() {
+        budget = double.parse(revenue['revenueBudget']);
+      });
+    });
+    FirebaseDatabase.instance
+        .ref()
+        .child('trackRevenue/' + uid + '/' + actualMonthRef + "/")
+        .orderByChild('date').limitToLast(30)
+        .onChildAdded
+        .listen((event) {
+      Map rev = event.snapshot.value as Map;
+      setState(() {
+        if (rev['date'] == actualDate) {
+          dailyRev += double.parse(rev['amount']);
+        }
+
+        data2.add(_SalesData(
+            rev['date'].substring(0, 2), double.parse(rev['amount'])));
+        data.add(_SalesData(rev['date'].substring(0, 2), budget));
+      });
+    });
+
+    FirebaseDatabase.instance.ref().child('User/').onChildAdded.listen((event) {
+      Map user = event.snapshot.value as Map;
+      if (user['email'] == mail) {
+        setState(() {
+          sme = user['sme'];
+        });
+
+        print(sme);
+      }
+    });
+    Map? revenueTrack;
+    FirebaseDatabase.instance
+        .ref()
+        .child('trackRevenue/' + uid + '/' + actualMonthRef + "/")
+        .onChildAdded
+        .listen((event) {
+      revenueTrack = event.snapshot.value as Map;
+    });
+
+    String getDate = "";
+    double dateAmount = 0.0;
+
+    FirebaseDatabase.instance
+        .ref()
+        .child('Revenue/' + uid)
+        .orderByChild("date").limitToLast(30)
+        .onChildAdded
+        .listen((event) {
+      Map revenue = event.snapshot.value as Map;
+      countRevenue++;
+
+      setState(() {
+        totalRevenue += double.parse(revenue['amount']);
+        averageRevenue = totalRevenue / countRevenue;
+        percentageRevenue = (averageRevenue / totalRevenue) * 100;
+
+        if (getDate == revenue['date'].substring(0, 2)) {
+          getDate = "";
+          dateAmount += double.parse(revenue['amount']);
+        } else {
+          getDate = revenue['date'].substring(0, 2);
+          dateAmount += double.parse(revenue['amount']);
+        }
+      });
+      if (getDate != "") {
+        // data2.add(_SalesData(getDate, dateAmount));
+        // data.add(_SalesData(getDate, budget));
+        dateAmount = 0;
+      }
+    });
+    dbRef = FirebaseDatabase.instance.ref().child('Revenue' + '/' + uid);
+
+    reference = FirebaseDatabase.instance.ref().child('Revenue' + '/' + uid);
+    reference1 = FirebaseDatabase.instance
+        .ref()
+        .child('trackRevenue/' + uid + '/' + actualMonthRef + "/");
+  }
+
+  Widget listRevenue({required Map revenue}) {
+    return GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => SecondRoute(
+                    ky: revenue['key'],
+                    amount: revenue['amount'],
+                    plan: revenue['plan'],
+                    comment: revenue['comment'],
+                    margin: revenue['margin'],
+                    date: revenue['date'])),
+          );
+          // Add what you want to do on tap
+        },
+        child: SingleChildScrollView(
+            padding: EdgeInsets.all(20),
+            child: Row(children: [
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(
+                  revenue['date'],
+                  style: TextStyle(
+                    color: Colors.grey[500],
+                  ),
+                ),
+                Text(
+                  'Daily Sales',
+                  style: TextStyle(
+                    fontSize: 22,
+                  ),
+                ),
+                Text(
+                  revenue['comment'],
+                  style: TextStyle(
+                    color: Colors.grey[500],
+                  ),
+                ),
+              ]),
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '\$' + revenue['amount'],
+                        style: TextStyle(
+                          fontSize: 38,
+                        ),
+                      ),
+                    ]),
+              ),
+            ])));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Color insightColor2 = Colors.blue;
+    return Scaffold(
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /*2*/
+            Container(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                sme,
+                style: TextStyle(
+                  fontSize: 15,
+                ),
+              ),
+            ),
+            const Text(
+              'United States Dollar',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        actions: <Widget>[
+          DropdownButtonHideUnderline(
+            child: DropdownButton2(
+              customButton: const Icon(
+                Icons.menu_rounded,
+                size: 46,
+                color: Colors.white,
+              ),
+              customItemsHeights: [
+                ...List<double>.filled(MenuItems.firstItems.length, 48),
+                8,
+                ...List<double>.filled(MenuItems.secondItems.length, 48),
+              ],
+              items: [
+                ...MenuItems.firstItems.map(
+                      (item) => DropdownMenuItem<MenuItem>(
+                    value: item,
+                    child: MenuItems.buildItem(item),
+                  ),
+                ),
+                const DropdownMenuItem<Divider>(
+                    enabled: false, child: Divider()),
+                ...MenuItems.secondItems.map(
+                      (item) => DropdownMenuItem<MenuItem>(
+                    value: item,
+                    child: MenuItems.buildItem(item),
+                  ),
+                ),
+              ],
+              onChanged: (value) {
+                MenuItems.onChanged(context, value as MenuItem);
+              },
+              itemHeight: 48,
+              itemPadding: const EdgeInsets.only(left: 16, right: 16),
+              dropdownWidth: 160,
+              dropdownPadding: const EdgeInsets.symmetric(vertical: 6),
+              dropdownDecoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                color: Colors.blue,
+              ),
+              dropdownElevation: 8,
+              offset: const Offset(0, 8),
+            ),
+          ),
+        ],
+        backgroundColor: Colors.blue,
+        automaticallyImplyLeading: false,
+      ),
+      body: ListView(
+        children: [
+          //Initialize the chart widget
+          Container(
+            padding: const EdgeInsets.all(10),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                //border: Border.all(width: 2.0, color: insightColor2),
+              ),
+              child: Text("Sometimes it’s exhausting growing your small business to become a big business of tomorrow, you need to bounce of key strategic with sharp minds, our pool of small business experts will be there for you to bounce off ideas through our 360° Advisory.\n\n Simply Set A Board Meeting with our team, to get third opinion on our strategic action plan and we will assign our best advisor with deep expertise in the area.",
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+          Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                    style: TextButton.styleFrom(
+                      onSurface: Colors.black,
+                      backgroundColor: Colors.blue,
+                    ),
+                    onPressed: () {
+                      _showMyDialog(); // Navigate back to first route when tapped.
+                    },
+                    child: Row(children:[
+                      Icon(Icons.arrow_circle_right_outlined),
+                      Text( 'Set A Board Meeting')
+                    ])),
+              ],
+            ),
+          ),
+          const SizedBox(height:10),
+          Container(
+            padding: const EdgeInsets.all(10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Status',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    'Agenda',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    'Attachments',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    '   Date',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Image.asset('assets/model.png',
+            width: 230,
+            height:430,
+          ),
+          const SizedBox(
+            height: 30, // <-- SEE HERE
+          ),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+
+        items: const <BottomNavigationBarItem>[
+
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.wallet),
+            label: 'Revenue',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add_circle),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.pie_chart),
+            label: 'Expenses',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.attach_money_sharp),
+            label: 'Funding',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.amber[800],
+        unselectedItemColor: Colors.blue,
+        onTap: _onItemTapped,
+      ),
     );
   }
 }

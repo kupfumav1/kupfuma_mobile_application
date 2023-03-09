@@ -61,6 +61,7 @@ dependencies:
   fluttertoast: ^8.1.3
   flutter_email_sender: ^5.2.0
   syncfusion_flutter_pdfviewer: ^20.4.52
+  angles: ^2.1.1
 
 dev_dependencies:
   flutter_test:
@@ -93,6 +94,7 @@ flutter:
     - assets/images/back.jpg
     - assets/images/hr.png
     - assets/images/lg.png
+    - assets/model.png
     - assets/images/
     - assets/terms.pdf
     - assets/guide.pdf

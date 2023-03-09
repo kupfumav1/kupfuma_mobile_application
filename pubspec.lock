@@ -9,6 +9,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.12"
+  angles:
+    dependency: "direct main"
+    description:
+      name: angles
+      sha256: "60b1ec93b67f156f35e4c259bfb7e1a6b92acd8cfd60953ce9eef5621f7b5e62"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.1"
   archive:
     dependency: transitive
     description:
