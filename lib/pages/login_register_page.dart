@@ -87,6 +87,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _controllerSname = TextEditingController();
   final TextEditingController _controllerNumber = TextEditingController();
   final TextEditingController sectorController = TextEditingController();
+  final TextEditingController _controllerDesc= TextEditingController();
   final countryController = TextEditingController();
   final List<Map<String, dynamic>> _items = [
     {
@@ -379,6 +380,7 @@ class _LoginPageState extends State<LoginPage> {
       'fname': _controllerFname.text,
       'sname': _controllerSname.text,
       'email': _controllerEmail.text,
+      'desc':_controllerDesc.text,
       'currency':currency_value,
       'sector':sectorController.text,
 
@@ -539,6 +541,19 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 children:[
                 _entryField('SME Name',_controllerSME),
+                  TextField(
+
+                    keyboardType: TextInputType.multiline,
+                    maxLines: 6,
+                    controller: _controllerDesc,
+                    decoration: InputDecoration(
+                      labelText: 'Business Description [300 Characters]',
+                      hintText: '[300 Characters Limit]',
+                      filled: true, //<-- SEE HERE
+                      fillColor: Colors.white,
+                    ),
+                    style: const TextStyle(color: Colors.black),
+                  ),
                   _entryField('First Name',_controllerFname),
                   _entryField('Surname',_controllerSname),
                   SelectFormField(
@@ -597,7 +612,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
             Center(
-              child: Text('Our support to the African SMEs is geared towards funding SMEs to enable value addition for import substitution, the phase which will unlock Africa\'s growth potential to catch up with the rest of the world.',
+              child: Text('Our support to the small business in Africa is to enable value addition for import substitution, the phase which will unlock Africa\’s growth potential to catch up with the rest of the world.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.blue,
