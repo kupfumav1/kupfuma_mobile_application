@@ -3,6 +3,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'dart:math';
+//import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+//import 'noti.dart';
 
 final List<List<String>> imgList = [
   ['assets/images/Tatenda.jpg','We enable small businesses\n to build their monthly\n financial statements, on the go.'],
@@ -12,9 +14,12 @@ final List<List<String>> imgList = [
   ];
 final int imgNum=Random().nextInt(4);
 final int contentNum=Random().nextInt(4);
+//final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+//FlutterLocalNotificationsPlugin();
 @override
 void initState() {
-
+  //super.initState();
+ // Noti.initialize(flutterLocalNotificationsPlugin);
 }
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

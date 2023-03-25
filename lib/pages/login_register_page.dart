@@ -386,16 +386,16 @@ class _LoginPageState extends State<LoginPage> {
 
     };
     String the_name=_controllerFname.text;
-    //// send mail start
-    String message="<html><body>Hi, $the_name<br><br>Welcome to Kupfuma, we will help you build wealth for your small business through our business analytics and flexible funding. <br><br>There is a funding gap of \$300billion across small business in Africa, our analytics will help your small businesses become profitable whilst our flexible funding will reward you with more capital to grow your small business to become a big business. <br><br>We are highly geared towards funding small businesses for down stream value addition to undertake import substitution across Africa, a phase which will help unlock the growth potential for Africa to catch up with the rest of the world. <br><br>Simply doubling down on efforts for small businesses with business analytics and flexible funding, we will easily double Africa’s Gross Domestic Product to help improve living standards across the continent. <br><br>Be part of our journey, to build wealth for your small business. <br><br>Kupfuma | Building wealth<br> <a href='www.kupfuma.com'>www.cKupfuma.com</a><br>Facebook handle and Twitter handle</body></html>";
-    final Email send_email = Email(
-      body: '$message',
-      subject: 'Kupfuma Registration',
-      recipients: [_controllerEmail.text],
-      isHTML: true,
-    );
-
-    await FlutterEmailSender.send(send_email);
+    // //// send mail start
+    // String message="<html><body>Hi, $the_name<br><br>Welcome to Kupfuma, we will help you build wealth for your small business through our business analytics and flexible funding. <br><br>There is a funding gap of \$300billion across small business in Africa, our analytics will help your small businesses become profitable whilst our flexible funding will reward you with more capital to grow your small business to become a big business. <br><br>We are highly geared towards funding small businesses for down stream value addition to undertake import substitution across Africa, a phase which will help unlock the growth potential for Africa to catch up with the rest of the world. <br><br>Simply doubling down on efforts for small businesses with business analytics and flexible funding, we will easily double Africa’s Gross Domestic Product to help improve living standards across the continent. <br><br>Be part of our journey, to build wealth for your small business. <br><br>Kupfuma | Building wealth<br> <a href='www.kupfuma.com'>www.cKupfuma.com</a><br>Facebook handle and Twitter handle</body></html>";
+    // final Email send_email = Email(
+    //   body: '$message',
+    //   subject: 'Kupfuma Registration',
+    //   recipients: [_controllerEmail.text],
+    //   isHTML: true,
+    // );
+    //
+    // await FlutterEmailSender.send(send_email);
    // send mail end
     try {
       await FirebaseDatabase.instance.ref().child('User'+'/').push().set(user);
@@ -633,6 +633,9 @@ class SecondRoute extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Kupfuma: Terms & Conditions'),
+      ),
         body: SfPdfViewer.asset(
             'assets/terms.pdf'),
     );

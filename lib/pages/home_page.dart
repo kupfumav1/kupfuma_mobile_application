@@ -45,6 +45,9 @@ class GuideRoute extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        appBar: AppBar(
+        title: const Text('Kupfuma: User Guide'),
+      ),
       body: SfPdfViewer.asset(
           'assets/guide.pdf'),
     );
@@ -56,6 +59,9 @@ class AboutRoute extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Kupfuma: About'),
+      ),
       body: SfPdfViewer.asset(
           'assets/about.pdf'),
     );
@@ -96,7 +102,7 @@ class MenuItems {
   static const about =
   MenuItem(text: 'About Us', icon: Icons.comment);
   static const delete =
-  MenuItem(text: 'Account', icon: Icons.delete_forever);
+  MenuItem(text: 'Delete', icon: Icons.delete_forever);
   static const settings = MenuItem(text: 'Reset', icon: Icons.delete);
   static const logout = MenuItem(text: 'Log Out', icon: Icons.logout);
   static const reviseBudget = MenuItem(text: 'Set Budgets', icon: Icons.money_off);
@@ -124,6 +130,9 @@ class MenuItems {
     TextEditingController smeNameController = new TextEditingController();
     TextEditingController userNameController = new TextEditingController();
     TextEditingController mainNumberController = new TextEditingController();
+    TextEditingController descController = new TextEditingController();
+
+    final _formKey = GlobalKey<FormState>();
     String mainSme = "", number = "", key = "";
     late DatabaseReference reference;
     update() async {
@@ -132,7 +141,8 @@ class MenuItems {
       Map<String, String> revenue1 = {
         'sme': smeNameController.text,
         'number': mainNumberController.text,
-        'fname':userNameController.text
+        'fname':userNameController.text,
+        'desc':descController.text
       };
       await reference.update(revenue1);
       Navigator.pop(context);
@@ -164,6 +174,7 @@ class MenuItems {
           userNameController.text= revenue['fname'];
           // Step 2 <- SEE HERE
           mainNumberController.text = revenue['number'].toString();
+          descController.text = revenue['desc'];
 
         }
       });
@@ -175,7 +186,9 @@ class MenuItems {
         showDialog<String>(
           context: context,
           builder: (BuildContext context) => Dialog(
-            child: ListView(
+            child:Form(
+              key: _formKey,
+              child: ListView(
               padding: const EdgeInsets.all(8.0),
               children: [
                 Column(
@@ -195,7 +208,13 @@ class MenuItems {
                     const SizedBox(
                       height: 25,
                     ),
-                    TextField(
+                    TextFormField(
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Missing Required Field';
+                        }
+                        return null;
+                      },
                       controller: userNameController,
                       keyboardType: TextInputType.text,
                       decoration: const InputDecoration(
@@ -205,7 +224,13 @@ class MenuItems {
                       ),
                     ),
                     const SizedBox(height: 15),
-                    TextField(
+                    TextFormField(
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Missing Required Field';
+                        }
+                        return null;
+                      },
                       controller: smeNameController,
                       keyboardType: TextInputType.text,
                       decoration: const InputDecoration(
@@ -215,13 +240,36 @@ class MenuItems {
                       ),
                     ),
                     const SizedBox(height: 15),
-                    TextField(
+                    TextFormField(
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Missing Required Field';
+                        }
+                        return null;
+                      },
                       controller: mainNumberController,
                       keyboardType: TextInputType.text,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                         labelText: 'Phone Number',
                         hintText: 'Enter Phone Number',
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    TextFormField(
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Missing Required Field';
+                        }
+                        return null;
+                      },
+                      controller: descController,
+                      keyboardType: TextInputType.multiline,
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Business Description',
+                        hintText: 'Enter Business Description',
                       ),
                     ),
                     const SizedBox(height: 15),
@@ -236,11 +284,13 @@ class MenuItems {
                           //
                           // ),
                           onPressed: () {
+                            if (_formKey.currentState!.validate()){
                             Navigator.pop(context);
                             update();
                             // reference.push().set(revenue);
 
                             SignIn;
+                          }
                           },
                           child: const Text('Update'),
                           color: Colors.blue,
@@ -269,7 +319,7 @@ class MenuItems {
                   ],
                 ),
               ],
-            ),
+            ),),
           ),
         );
         //Do something
@@ -422,6 +472,87 @@ class MenuItems {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => SignIn()),
+        );
+        break;
+      case MenuItems.delete:
+        final TextEditingController _controllerPassword= TextEditingController();
+        final _formKey = GlobalKey<FormState>();
+        String uid = user?.uid ?? 'uid';
+        String email = user?.email ?? 'email';
+        authority(password) async{
+          AuthCredential credential = EmailAuthProvider.credential(email: email, password: password);
+
+// Reauthenticate
+          await FirebaseAuth.instance.currentUser!.reauthenticateWithCredential(credential);
+          try {
+            await FirebaseAuth.instance.currentUser!.delete();
+          } on FirebaseAuthException catch (e) {
+            if (e.code == 'requires-recent-login') {
+              print('The user must reauthenticate before this operation can be executed.');
+            }
+          }
+          print("napinda");
+          FirebaseAuth.instance.currentUser!.delete();
+          FirebaseDatabase.instance.ref("Revenue/" + uid).remove();
+          FirebaseDatabase.instance.ref("Expenses/" + uid).remove();
+          FirebaseDatabase.instance.ref("budgets/" + uid).remove();
+          FirebaseDatabase.instance
+              .ref("trackExpensesCartegory/" + uid)
+              .remove();
+          FirebaseDatabase.instance
+              .ref("trackMorningMessage/" + uid)
+              .remove();
+          FirebaseDatabase.instance.ref("trackRevenue/" + uid).remove();
+          FirebaseDatabase.instance
+              .ref("trackExpenses/" + uid)
+              .remove();
+          FirebaseDatabase.instance
+              .ref("balanceSheet/" + uid)
+              .remove();
+        }
+        showDialog<String>(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: const Text('Erase Account'),
+            content:  Form(
+              key: _formKey,
+              child: TextFormField(
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please Enter Password';
+                  }
+                  return null;
+                },
+                controller: _controllerPassword,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  filled: true, //<-- SEE HERE
+                  fillColor: Colors.white,
+                ),
+                style: const TextStyle(color: Colors.black),
+                obscureText: true,
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => {Navigator.pop(context, 'Cancel')},
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () =>
+                {
+                  if (_formKey.currentState!.validate()){
+                   authority(_controllerPassword.text),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SignIn()),
+                  ),
+                }
+                },
+                child: const Text('Submit'),
+              ),
+            ],
+          ),
         );
         break;
     }
