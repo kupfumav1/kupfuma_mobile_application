@@ -3,9 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../auth.dart';
 
+
 import 'package:select_form_field/select_form_field.dart';
 import 'package:currency_picker/currency_picker.dart';
-import 'package:flutter_email_sender/flutter_email_sender.dart';
+//import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 class AuthenticationService {
   final _auth = FirebaseAuth.instance;
@@ -374,7 +375,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
   Future<void> createUserWithEmailAndPassword() async {
-    Map<String, String> user = {
+    Map<String, String> user1 = {
       'sme': _controllerSME.text,
       'number': _controllerNumber.text,
       'fname': _controllerFname.text,
@@ -398,11 +399,14 @@ class _LoginPageState extends State<LoginPage> {
     // await FlutterEmailSender.send(send_email);
    // send mail end
     try {
-      await FirebaseDatabase.instance.ref().child('User'+'/').push().set(user);
+
       await Auth().createUserWithEmailAndPassword(
         email: _controllerEmail.text,
         password: _controllerPassword.text,
       );
+      User? user = Auth().currentUser;
+      String uid = user?.uid ??' ';
+      await FirebaseDatabase.instance.ref().child('User'+'/'+uid).set(user1);
     } on FirebaseAuthException catch (e) {
       setState(() {
         errorMessage = e.message;

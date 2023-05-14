@@ -1,8 +1,8 @@
 import 'dart:async';
 // import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:get_funds_v1/auth.dart';
-import 'package:get_funds_v1/widget_tree.dart';
+import 'package:kupfuma/auth.dart';
+import 'package:kupfuma/widget_tree.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:percent_indicator/percent_indicator.dart';
@@ -20,6 +20,7 @@ import 'package:intl/intl.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:angles/angles.dart';
+
 // import 'dart:math' as math;
 //import 'package:fluttertoast/fluttertoast.dart';
 final threeQuarterTurn = Angle.halfTurn() + Angle.degrees(180.0);
@@ -39,20 +40,21 @@ String actualMonthRef = month + "-" + the_year;
 Future<void> signOut() async {
   await Auth().signOut();
 }
+
 class GuideRoute extends StatelessWidget {
   const GuideRoute({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
+      appBar: AppBar(
         title: const Text('Kupfuma: User Guide'),
       ),
-      body: SfPdfViewer.asset(
-          'assets/guide.pdf'),
+      body: SfPdfViewer.asset('assets/guide.pdf'),
     );
   }
 }
+
 class AboutRoute extends StatelessWidget {
   const AboutRoute({super.key});
 
@@ -62,11 +64,11 @@ class AboutRoute extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Kupfuma: About'),
       ),
-      body: SfPdfViewer.asset(
-          'assets/about.pdf'),
+      body: SfPdfViewer.asset('assets/about.pdf'),
     );
   }
 }
+
 class HomePage extends StatefulWidget {
   // ignore: prefer_const_constructors_in_immutables
   HomePage({Key? key}) : super(key: key);
@@ -92,20 +94,20 @@ class MenuItem {
 }
 
 class MenuItems {
-  static const List<MenuItem> firstItems = [home,guide,reviseBudget,about];
-  static const List<MenuItem> secondItems = [settings,delete,logout];
+  static const List<MenuItem> firstItems = [home, guide, reviseBudget, about];
+  static const List<MenuItem> secondItems = [settings, delete, logout];
 
+  static const myAdvisor = MenuItem(text: 'My Advisor', icon: Icons.album);
   static const home =
       MenuItem(text: 'Profile', icon: Icons.supervised_user_circle_outlined);
   static const guide =
-  MenuItem(text: 'User Guide', icon: Icons.verified_user_rounded);
-  static const about =
-  MenuItem(text: 'About Us', icon: Icons.comment);
-  static const delete =
-  MenuItem(text: 'Delete', icon: Icons.delete_forever);
+      MenuItem(text: 'User Guide', icon: Icons.verified_user_rounded);
+  static const about = MenuItem(text: 'About Us', icon: Icons.comment);
+  static const delete = MenuItem(text: 'Delete', icon: Icons.delete_forever);
   static const settings = MenuItem(text: 'Reset', icon: Icons.delete);
   static const logout = MenuItem(text: 'Log Out', icon: Icons.logout);
-  static const reviseBudget = MenuItem(text: 'Set Budgets', icon: Icons.money_off);
+  static const reviseBudget =
+      MenuItem(text: 'Set Budgets', icon: Icons.money_off);
   static Widget buildItem(MenuItem item) {
     return Row(
       children: [
@@ -131,18 +133,30 @@ class MenuItems {
     TextEditingController userNameController = new TextEditingController();
     TextEditingController mainNumberController = new TextEditingController();
     TextEditingController descController = new TextEditingController();
+    String advisorDesc = "",
+        advisorName = "",
+        advisorNumber = "",
+        advisorEmail = "",
+        advisorCountry = "",
+        advisorCity = "",
+        advisorQ1 = "",
+        advisorQ2 = "",
+        advisorEx1 = "",
+        advisorEx2 = "",
+        advisorEx3 = "",
+        advisorEx4 = "",
+        advisorEx5 = "";
 
     final _formKey = GlobalKey<FormState>();
     String mainSme = "", number = "", key = "";
     late DatabaseReference reference;
     update() async {
-
       reference = FirebaseDatabase.instance.ref('User' + '/' + key);
       Map<String, String> revenue1 = {
         'sme': smeNameController.text,
         'number': mainNumberController.text,
-        'fname':userNameController.text,
-        'desc':descController.text
+        'fname': userNameController.text,
+        'desc': descController.text
       };
       await reference.update(revenue1);
       Navigator.pop(context);
@@ -153,11 +167,9 @@ class MenuItems {
     }
 
     @override
-    startState() {
+    startState() async {
       // TODO: implement initState
-
-
-      FirebaseDatabase.instance
+      await FirebaseDatabase.instance
           .ref()
           .child('User/')
           .onChildAdded
@@ -169,157 +181,353 @@ class MenuItems {
           reference = FirebaseDatabase.instance.ref('Users' + '/' + key);
           //number =revenue['number'];
           mainSme = revenue['sme'];
-
+          advisorEmail = revenue['advisorEmail'];
           smeNameController.text = mainSme;
-          userNameController.text= revenue['fname'];
+          userNameController.text = revenue['fname'];
           // Step 2 <- SEE HERE
           mainNumberController.text = revenue['number'].toString();
           descController.text = revenue['desc'];
+        }
+      });
 
+      await Future.delayed(Duration(seconds: 1));
+
+      FirebaseDatabase.instance
+          .ref()
+          .child('advisor/')
+          .onChildAdded
+          .listen((event) {
+        Map revenue = event.snapshot.value as Map;
+        revenue['key'] = event.snapshot.key;
+        if (advisorEmail == revenue['email']) {
+          print("napinda baba");
+          advisorName = revenue['name'];
+          advisorCountry = revenue['country'];
+          advisorCity = revenue['city'];
+          advisorEx1 = revenue['exp1'];
+          advisorEx2 = revenue['exp2'];
+          advisorEx3 = revenue['exp3'];
+          advisorEx4 = revenue['exp4'];
+          advisorEx5 = revenue['exp5'];
+          advisorQ1 = revenue['q1'];
+          advisorQ2 = revenue['q2'];
+          advisorDesc = revenue['desc'];
         }
       });
     }
 
     startState();
     switch (item) {
+      case MenuItems.myAdvisor:
+        showDialog<String>(
+          context: context,
+          builder: (BuildContext context) => Dialog(
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(8.0),
+                children: [
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Text(
+                        'My Advisor Profile\n' + advisorName,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Text(
+                        '\n\nNumber: ' + advisorNumber,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 25,
+                      ),
+                      Text(
+                        'Email: ' + advisorEmail,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Text(
+                        'Description: ' + advisorDesc,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 25,
+                      ),
+                      Text(
+                        '\nQualifcations',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Text(
+                        advisorQ1,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Text(
+                        advisorQ2,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 25,
+                      ),
+                      Text(
+                        '\nExperience',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Text(
+                        advisorEx1,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Text(
+                        advisorEx2,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Text(
+                        advisorEx3,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Text(
+                        advisorEx4,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Text(
+                        advisorEx5,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 25,
+                      ),
+                      const SizedBox(height: 15),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ElevatedButton(
+                              style: TextButton.styleFrom(
+                                onSurface: Colors.white,
+                                backgroundColor: Colors.red,
+                                minimumSize: const Size.fromHeight(50),
+                              ),
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: const Text('Close')),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+        //Do something
+        break;
       case MenuItems.home:
         showDialog<String>(
           context: context,
           builder: (BuildContext context) => Dialog(
-            child:Form(
+            child: Form(
               key: _formKey,
               child: ListView(
-              padding: const EdgeInsets.all(8.0),
-              children: [
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    const Text(
-                      'Update Profile',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
+                padding: const EdgeInsets.all(8.0),
+                children: [
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      const SizedBox(
+                        height: 20,
                       ),
-                    ),
-                    const SizedBox(
-                      height: 25,
-                    ),
-                    TextFormField(
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Missing Required Field';
-                        }
-                        return null;
-                      },
-                      controller: userNameController,
-                      keyboardType: TextInputType.text,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'User Name',
-                        hintText: 'Enter User Name',
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    TextFormField(
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Missing Required Field';
-                        }
-                        return null;
-                      },
-                      controller: smeNameController,
-                      keyboardType: TextInputType.text,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'SME Name',
-                        hintText: 'Enter SME Name',
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    TextFormField(
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Missing Required Field';
-                        }
-                        return null;
-                      },
-                      controller: mainNumberController,
-                      keyboardType: TextInputType.text,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Phone Number',
-                        hintText: 'Enter Phone Number',
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    TextFormField(
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Missing Required Field';
-                        }
-                        return null;
-                      },
-                      controller: descController,
-                      keyboardType: TextInputType.multiline,
-                      maxLines: 4,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Business Description',
-                        hintText: 'Enter Business Description',
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        MaterialButton(
-                          // style: TextButton.styleFrom(
-                          //   onSurface: Colors.white,
-                          //   backgroundColor:Colors.blue,
-                          //     minimumSize: const Size.fromHeight(50),
-                          //
-                          // ),
-                          onPressed: () {
-                            if (_formKey.currentState!.validate()){
-                            Navigator.pop(context);
-                            update();
-                            // reference.push().set(revenue);
-
-                            SignIn;
-                          }
-                          },
-                          child: const Text('Update'),
-                          color: Colors.blue,
-                          textColor: Colors.white,
-                          minWidth: 300,
+                      const Text(
+                        'Update Profile',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 15),
-                    const SizedBox(height: 15),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ElevatedButton(
-                            style: TextButton.styleFrom(
-                              onSurface: Colors.white,
-                              backgroundColor: Colors.red,
-                              minimumSize: const Size.fromHeight(50),
-                            ),
+                      ),
+                      const SizedBox(
+                        height: 25,
+                      ),
+                      TextFormField(
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Missing Required Field';
+                          }
+                          return null;
+                        },
+                        controller: userNameController,
+                        keyboardType: TextInputType.text,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          labelText: 'User Name',
+                          hintText: 'Enter User Name',
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      TextFormField(
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Missing Required Field';
+                          }
+                          return null;
+                        },
+                        controller: smeNameController,
+                        keyboardType: TextInputType.text,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          labelText: 'SME Name',
+                          hintText: 'Enter SME Name',
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      TextFormField(
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Missing Required Field';
+                          }
+                          return null;
+                        },
+                        controller: mainNumberController,
+                        keyboardType: TextInputType.text,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          labelText: 'Phone Number',
+                          hintText: 'Enter Phone Number',
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      TextFormField(
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Missing Required Field';
+                          }
+                          return null;
+                        },
+                        controller: descController,
+                        keyboardType: TextInputType.multiline,
+                        maxLines: 4,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          labelText: 'Business Description',
+                          hintText: 'Enter Business Description',
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          MaterialButton(
+                            // style: TextButton.styleFrom(
+                            //   onSurface: Colors.white,
+                            //   backgroundColor:Colors.blue,
+                            //     minimumSize: const Size.fromHeight(50),
+                            //
+                            // ),
                             onPressed: () {
-                              Navigator.pop(context);
+                              if (_formKey.currentState!.validate()) {
+                                Navigator.pop(context);
+                                update();
+                                // reference.push().set(revenue);
+
+                                SignIn;
+                              }
                             },
-                            child: const Text('Close')),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),),
+                            child: const Text('Update'),
+                            color: Colors.blue,
+                            textColor: Colors.white,
+                            minWidth: 300,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 15),
+                      const SizedBox(height: 15),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ElevatedButton(
+                              style: TextButton.styleFrom(
+                                onSurface: Colors.white,
+                                backgroundColor: Colors.red,
+                                minimumSize: const Size.fromHeight(50),
+                              ),
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: const Text('Close')),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
         );
         //Do something
@@ -413,7 +621,11 @@ class MenuItems {
                       'expensesTarget': expensesTargetController.text
                     };
 
-                    FirebaseDatabase.instance.ref().child('budgets/' + uid).push().set(revenue);
+                    FirebaseDatabase.instance
+                        .ref()
+                        .child('budgets/' + uid)
+                        .push()
+                        .set(revenue);
                     Navigator.of(context).pop();
                   },
                 ),
@@ -450,8 +662,14 @@ class MenuItems {
                   FirebaseDatabase.instance
                       .ref("trackExpenses/" + uid)
                       .remove(),
+                  FirebaseDatabase.instance.ref("balanceSheet/" + uid).remove(),
+                  FirebaseDatabase.instance.ref("FixedCosts/" + uid).remove(),
+                  FirebaseDatabase.instance.ref("net_position/" + uid).remove(),
                   FirebaseDatabase.instance
-                      .ref("balanceSheet/" + uid)
+                      .ref("trackFixedCosts/" + uid)
+                      .remove(),
+                  FirebaseDatabase.instance
+                      .ref("trackFixedCostsCartegory/" + uid)
                       .remove(),
                   Navigator.push(
                     context,
@@ -475,20 +693,24 @@ class MenuItems {
         );
         break;
       case MenuItems.delete:
-        final TextEditingController _controllerPassword= TextEditingController();
+        final TextEditingController _controllerPassword =
+            TextEditingController();
         final _formKey = GlobalKey<FormState>();
         String uid = user?.uid ?? 'uid';
         String email = user?.email ?? 'email';
-        authority(password) async{
-          AuthCredential credential = EmailAuthProvider.credential(email: email, password: password);
+        authority(password) async {
+          AuthCredential credential =
+              EmailAuthProvider.credential(email: email, password: password);
 
 // Reauthenticate
-          await FirebaseAuth.instance.currentUser!.reauthenticateWithCredential(credential);
+          await FirebaseAuth.instance.currentUser!
+              .reauthenticateWithCredential(credential);
           try {
             await FirebaseAuth.instance.currentUser!.delete();
           } on FirebaseAuthException catch (e) {
             if (e.code == 'requires-recent-login') {
-              print('The user must reauthenticate before this operation can be executed.');
+              print(
+                  'The user must reauthenticate before this operation can be executed.');
             }
           }
           print("napinda");
@@ -499,22 +721,22 @@ class MenuItems {
           FirebaseDatabase.instance
               .ref("trackExpensesCartegory/" + uid)
               .remove();
-          FirebaseDatabase.instance
-              .ref("trackMorningMessage/" + uid)
-              .remove();
+          FirebaseDatabase.instance.ref("trackMorningMessage/" + uid).remove();
           FirebaseDatabase.instance.ref("trackRevenue/" + uid).remove();
+          FirebaseDatabase.instance.ref("trackExpenses/" + uid).remove();
+          FirebaseDatabase.instance.ref("balanceSheet/" + uid).remove();
+          FirebaseDatabase.instance.ref("FixedCosts/" + uid).remove();
+          FirebaseDatabase.instance.ref("net_position/" + uid).remove();
+          FirebaseDatabase.instance.ref("trackFixedCosts/" + uid).remove();
           FirebaseDatabase.instance
-              .ref("trackExpenses/" + uid)
-              .remove();
-          FirebaseDatabase.instance
-              .ref("balanceSheet/" + uid)
+              .ref("trackFixedCostsCartegory/" + uid)
               .remove();
         }
         showDialog<String>(
           context: context,
           builder: (BuildContext context) => AlertDialog(
             title: const Text('Erase Account'),
-            content:  Form(
+            content: Form(
               key: _formKey,
               child: TextFormField(
                 validator: (value) {
@@ -539,15 +761,15 @@ class MenuItems {
                 child: const Text('Cancel'),
               ),
               TextButton(
-                onPressed: () =>
-                {
-                  if (_formKey.currentState!.validate()){
-                   authority(_controllerPassword.text),
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => SignIn()),
-                  ),
-                }
+                onPressed: () => {
+                  if (_formKey.currentState!.validate())
+                    {
+                      authority(_controllerPassword.text),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => SignIn()),
+                      ),
+                    }
                 },
                 child: const Text('Submit'),
               ),
@@ -597,6 +819,7 @@ class HomePageState extends State<HomePage> {
                     children: [
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -607,8 +830,12 @@ class HomePageState extends State<HomePage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('Income Statement')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -619,18 +846,44 @@ class HomePageState extends State<HomePage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('     Balance Sheet   ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                              MaterialPageRoute(
+                                  builder: (context) => FundingPage()),
                             ); // Navigate back to first route when tapped.
                           },
-                          child: Text('     $threeQuarterTurn Business Advisory  ')),
+                          child: Text('     Funding  ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text(
+                              '     $threeQuarterTurn Business Advisory  ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 15),
@@ -646,7 +899,7 @@ class HomePageState extends State<HomePage> {
         break;
       case 4:
         Navigator.push(
-            context, MaterialPageRoute(builder: (context) => FundingPage()));
+            context, MaterialPageRoute(builder: (context) => ValuationPage()));
         break;
     }
   }
@@ -726,8 +979,9 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  List<_SalesData> data = [];
-  List<_SalesData> data2 = [];
+  List<_SalesData2> data = [];
+  List<_SalesData2> data2 = [];
+  List<_SalesData2> data3 = [];
   Color insightColor1 = Colors.black;
   Color insightColor2 = Colors.blue;
   Color insightColor3 = Colors.grey;
@@ -743,17 +997,27 @@ class HomePageState extends State<HomePage> {
   double total = 0;
   double rp = 0;
   double cp = 0;
-  double np = 0;
+  double np = 0, projected = 0;
 ////calculate profit start
 
   double profit2 = 0;
-  void calculateProfit() async{
+  void calculateProfit() async {
     String uid = user?.uid ?? 'uid';
-    double totalRevenue = 0,cogs=0,gp=0;
+    double totalRevenue = 0, cogs = 0, gp = 0;
 
-    double totalExpense = 0,fixedCosts=0;
-
-
+    double totalExpense = 0, fixedCosts = 0;
+    FirebaseDatabase.instance
+        .ref()
+        .child('net_position/' + uid + '/')
+        .onChildAdded
+        .listen((event) {
+      Map rev = event.snapshot.value as Map;
+      setState(() {
+        profit2 += double.parse(rev['amount']);
+      });
+      projected += double.parse(rev['amount']);
+    });
+    await Future.delayed(Duration(seconds: 1));
     String a = '0',
         a1 = '0',
         a2 = '0',
@@ -769,17 +1033,17 @@ class HomePageState extends State<HomePage> {
         a12 = '0';
     FirebaseDatabase.instance
         .ref()
-        .child('trackFixedCosts/' + uid+'/'+actualMonthRef)
+        .child('trackFixedCosts/' + uid + '/' + actualMonthRef)
         .onChildAdded
         .listen((event) {
       Map revenue = event.snapshot.value as Map;
 
       setState(() {
         fixedCosts += double.parse(revenue['amount']);
-
       });
+      projected += double.parse(revenue['amount']);
     });
-
+    await Future.delayed(Duration(seconds: 1));
 
     FirebaseDatabase.instance
         .ref()
@@ -789,7 +1053,6 @@ class HomePageState extends State<HomePage> {
       Map exp = event.snapshot.value as Map;
 
       setState(() {
-
         a = exp['Advertising'];
         a1 = exp['Business Vehicle(s) Repairs'];
         a2 = exp['Employee Commissions'];
@@ -818,33 +1081,35 @@ class HomePageState extends State<HomePage> {
             double.parse(a11) +
             double.parse(a12);
 
-        profit2 = totalRevenue - totalExpense - cogs;
-
+        // profit2 = totalRevenue - totalExpense - cogs;
       });
     });
-    FirebaseDatabase.instance.ref().child('Revenue' + '/' + uid).onChildAdded.listen((event) {
+    FirebaseDatabase.instance
+        .ref()
+        .child('Revenue' + '/' + uid)
+        .onChildAdded
+        .listen((event) {
       Map revenue = event.snapshot.value as Map;
       setState(() {
         cogs += (double.parse(revenue['amount']) *
-            (100 - double.parse(revenue['margin']))) /
+                (100 - double.parse(revenue['margin']))) /
             100;
         totalRevenue += double.parse(revenue['amount']);
 
-        profit2 = totalRevenue - totalExpense - cogs;
+        // profit2 = totalRevenue - totalExpense - cogs;
         gp = totalRevenue - cogs;
       });
     });
     await Future.delayed(Duration(seconds: 1));
 
-    profit2 = totalRevenue - totalExpense - cogs;
+    // profit2 = totalRevenue - totalExpense - cogs;
   }
-
 
 //// calculate profit end
   late DatabaseReference dbRef;
   late DatabaseReference reference;
   late DatabaseReference budget_reference;
-  String sme = '';
+  String sme = '', currency = '';
   String UserName = "";
   String date = DateFormat('yyyy-MM-dd').format(DateTime.now());
   final salesTargetController = TextEditingController();
@@ -857,98 +1122,28 @@ class HomePageState extends State<HomePage> {
   double fr = 0.0;
   double dailyExp = 0, dailyRev = 0, dailyCosts = 0;
   String? selectedValue;
-  String _valueChanged = '',_valueChanged0 = '';
-  String _valueToValidate = '',_valueToValidate0 = '';
-  String _valueSaved = '',_valueSaved0 = '';
+  String _valueChanged = '', _valueChanged0 = '';
+  String _valueToValidate = '', _valueToValidate0 = '';
+  String _valueSaved = '', _valueSaved0 = '';
   final List<Map<String, dynamic>> _items0 = [
-                {
-                'value': '2020',
-                'label': '2020',
-                'icon': null,
-                },
-                {
-                'value': '2021',
-                'label': '2021',
-                'icon': null,
-                },
-                {
-                  'value': '2022',
-                  'label': '2022',
-                  'icon': null,
-                },
-                {
-                  'value': '2023',
-                  'label': '2023',
-                  'icon': null,
-                },
+    {
+      'value': the_year,
+      'label': the_year,
+      'icon': null,
+    },
   ];
   final List<Map<String, dynamic>> _items = [
     {
-      'value': 'January',
-      'label': 'January',
+      'value': month,
+      'label': month,
       'icon': null,
     },
-    {
-      'value': 'February',
-      'label': 'February',
-      'icon': null,
-    },
-    {
-      'value': 'March',
-      'label': 'March',
-      'icon': null,
-    },
-    {
-      'value': 'April',
-      'label': 'April',
-      'icon': null,
-    },
-    {
-      'value': 'May',
-      'label': 'May',
-      'icon': null,
-    },
-    {
-      'value': 'June',
-      'label': 'June',
-      'icon': null,
-    },
-    {
-      'value': 'July',
-      'label': 'July',
-      'icon': null,
-    },
-    {
-      'value': 'August',
-      'label': 'August',
-      'icon': null,
-    },
-    {
-      'value': 'September',
-      'label': 'September',
-      'icon': null,
-    }, {
-      'value': 'October',
-      'label': 'October',
-      'icon': null,
-    },
-    {
-      'value': 'November',
-      'label': 'November',
-      'icon': null,
-    },
-    {
-      'value': 'December',
-      'label': 'December',
-      'icon': null,
-    },
-
-
   ];
-  double revs = 0, exps = 0,budgetExpenses=0,budgetRevenue=0,temp=0;
-  void plotGraph() async{
+  double revs = 0, exps = 0, budgetExpenses = 0, budgetRevenue = 0, temp = 0;
+  void plotGraph() async {
     String uid = user?.uid ?? 'uid'; // <-- Their email
     String mail = user?.email ?? 'email';
+    int k = 0, z = 0;
     FirebaseDatabase.instance
         .ref()
         .child('budgets/' + uid)
@@ -958,33 +1153,44 @@ class HomePageState extends State<HomePage> {
 
       setState(() {
         budgetRevenue = double.parse(revenue['revenueBudget']);
-        budgetExpenses = double.parse(revenue['expensesTarget']);
-        data.add(_SalesData("0", budgetExpenses));
-        data2.add(_SalesData("0", budgetRevenue));
-
+        budgetExpenses = double.parse(revenue['fixedCosts']);
+        projected -= budgetExpenses;
+        // data.add(_SalesData2("0", budgetExpenses));
+        //data2.add(_SalesData2("0", budgetRevenue));
       });
     });
-    await Future.delayed(Duration(seconds: 2));
+    await Future.delayed(Duration(seconds: 1));
 
     FirebaseDatabase.instance
         .ref()
-        .child('trackExpenses/' + uid + '/' + actualMonthRef + "/")
-        .orderByChild('date').limitToLast(30)
+        .child('Expenses/' + uid + '/')
+        .orderByChild('date')
+        .limitToLast(30)
         .onChildAdded
         .listen((event) {
       Map rev = event.snapshot.value as Map;
       setState(() {
         exps += double.parse(rev['amount']);
-
-        data.add(_SalesData(
-            rev['date'].substring(0, 2), exps+budgetExpenses));
+        if (k < 1) {
+          k++;
+          for (int i = 0; i < int.parse(rev['date'].substring(0, 2)); i++) {
+            if (i < 10) {
+              data.add(_SalesData2("0" + i.toString(), budgetExpenses));
+            } else {
+              data.add(_SalesData2(i.toString(), budgetExpenses));
+            }
+          }
+        }
+        data.add(
+            _SalesData2(rev['date'].substring(0, 2), exps + budgetExpenses));
       });
     });
 
     FirebaseDatabase.instance
         .ref()
         .child('trackRevenue/' + uid + '/' + actualMonthRef + "/")
-        .orderByChild('date').limitToLast(30)
+        .orderByChild('date')
+        .limitToLast(30)
         .onChildAdded
         .listen((event) {
       Map rev = event.snapshot.value as Map;
@@ -992,8 +1198,17 @@ class HomePageState extends State<HomePage> {
         revs += double.parse(rev['amount']);
         //data2.add(_SalesData(
         //    rev['date'].substring(0, 2), double.parse(rev['amount'])));
-        data2.add(_SalesData(
-            rev['date'].substring(0, 2), revs+budgetRevenue));
+        if (z < 1) {
+          z++;
+          for (int i = 0; i < int.parse(rev['date'].substring(0, 2)); i++) {
+            if (i < 10) {
+              data2.add(_SalesData2("0" + i.toString(), 0));
+            } else {
+              data2.add(_SalesData2(i.toString(), 0));
+            }
+          }
+        }
+        data2.add(_SalesData2(rev['date'].substring(0, 2), revs));
       });
     });
   }
@@ -1002,6 +1217,7 @@ class HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     calculateProfit();
+
     String uid = user?.uid ?? 'uid'; // <-- Their email
     String mail = user?.email ?? 'email';
 
@@ -1014,10 +1230,9 @@ class HomePageState extends State<HomePage> {
       if (user['email'] == mail) {
         setState(() {
           sme = user['sme'];
+          currency = user['currency'];
           UserName = user['fname'];
         });
-
-
       }
     });
     FirebaseDatabase.instance
@@ -1029,8 +1244,17 @@ class HomePageState extends State<HomePage> {
 
       setState(() {
         fixedCosts = double.parse(revenue['fixedCosts']);
+
+        for (int i = 0; i < 31; i++) {
+          if (i < 10) {
+            data3.add(_SalesData2("0" + i.toString(), fixedCosts));
+          } else {
+            data3.add(_SalesData2(i.toString(), fixedCosts));
+          }
+        }
       });
     });
+
     FirebaseDatabase.instance
         .ref()
         .child('Revenue/' + uid)
@@ -1047,10 +1271,11 @@ class HomePageState extends State<HomePage> {
         percentageRevenue = (averageRevenue / totalRevenue) * 100;
 
         total = totalRevenue + totalExpenses;
-        rp = (totalRevenue / total) * 100;
+
         cp = (totalExpenses / total) * 100;
 
         np = totalRevenue - totalExpenses;
+        rp = totalRevenue / total;
         fr = (fixedCosts / totalRevenue) * 100;
       });
     });
@@ -1066,16 +1291,17 @@ class HomePageState extends State<HomePage> {
         totalExpenses += double.parse(revenue['amount']) + fixedCosts;
         total = totalRevenue + totalExpenses;
 
-        rp = (totalRevenue / total) * 100;
+        rp = totalRevenue / (totalRevenue + totalExpenses);
+
         cp = (totalExpenses / total) * 100;
         np = totalRevenue - totalExpenses;
         if (revenue['date'] == actualDate) {
           dailyExp += double.parse(revenue['amount']);
-          dailyCosts = dailyExp / dailyExp;
+          dailyCosts = (dailyExp / dailyRev) * 100;
         }
 
         fr = (fixedCosts / totalRevenue) * 100;
-        if (profit2 > 0) {
+        if (projected > 0) {
           npColor = Colors.green;
         } else {
           npColor = Colors.red;
@@ -1102,71 +1328,73 @@ class HomePageState extends State<HomePage> {
               'Hi, $sme. New month, new opportunities. Set your budgets for the month.',
               textAlign: TextAlign.center,
             ),
-            content: SingleChildScrollView(child:Form(
-              key: _formKey,
-              child: ListBody(
-                children: <Widget>[
-                  TextFormField(
-                    controller: revenueBudgetController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Revenue Budget ',
-                      hintText: 'Enter Revenue Budget',
+            content: SingleChildScrollView(
+              child: Form(
+                key: _formKey,
+                child: ListBody(
+                  children: <Widget>[
+                    TextFormField(
+                      controller: revenueBudgetController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Revenue Budget ',
+                        hintText: 'Enter Revenue Budget',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please Enter Revenue Budget';
+                        }
+                        return null;
+                      },
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please Enter Revenue Budget';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 15),
-                  TextFormField(
-                    controller: fixedCostsController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Fixed Costs Budget',
-                      hintText: 'Enter Fixed Costs Budget',
+                    const SizedBox(height: 15),
+                    TextFormField(
+                      controller: fixedCostsController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Fixed Costs Budget',
+                        hintText: 'Enter Fixed Costs Budget',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please Enter Fixed Costs Budget';
+                        }
+                        return null;
+                      },
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please Enter Fixed Costs Budget';
-                      }
-                      return null;
-                    },
-                  ),
-                  // const SizedBox(height: 15),
-                  // TextField(
-                  //   controller: revenueTargetController,
-                  //   keyboardType: TextInputType.number,
-                  //   decoration: const InputDecoration(
-                  //     border: OutlineInputBorder(),
-                  //     labelText: 'Revenue Target ',
-                  //     hintText: 'Enter Revenue Target',
-                  //   ),
-                  // ),
-                  const SizedBox(height: 15),
-                  TextFormField(
-                    controller: expensesTargetController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Daily Expenses Budget',
-                      hintText: 'Enter Daily Expenses Budget',
+                    // const SizedBox(height: 15),
+                    // TextField(
+                    //   controller: revenueTargetController,
+                    //   keyboardType: TextInputType.number,
+                    //   decoration: const InputDecoration(
+                    //     border: OutlineInputBorder(),
+                    //     labelText: 'Revenue Target ',
+                    //     hintText: 'Enter Revenue Target',
+                    //   ),
+                    // ),
+                    const SizedBox(height: 15),
+                    TextFormField(
+                      controller: expensesTargetController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Daily Expenses Budget',
+                        hintText: 'Enter Daily Expenses Budget',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please Enter Daily Expenses Budget';
+                        }
+                        return null;
+                      },
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please Enter Daily Expenses Budget';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 15),
-                ],
+                    const SizedBox(height: 15),
+                  ],
+                ),
               ),
-            ),),
+            ),
             actions: <Widget>[
               TextButton(
                 child: const Text('Save'),
@@ -1174,7 +1402,6 @@ class HomePageState extends State<HomePage> {
                   if (_formKey.currentState!.validate()) {
                     // If the form is valid, display a snackbar. In the real world,
                     // you'd often call a server or save the information in a database.
-
 
                     Map<String, String> revenue = {
                       'salesTarget': '',
@@ -1187,7 +1414,8 @@ class HomePageState extends State<HomePage> {
 
                     budget_reference.push().set(revenue);
                     Navigator.of(context).pop();
-                  };
+                  }
+                  ;
                 },
               ),
             ],
@@ -1197,11 +1425,8 @@ class HomePageState extends State<HomePage> {
     }
 
     if (snapshot.value == null) {
-
       _showMyDialog();
-    } else {
-
-    }
+    } else {}
   }
 
   @override
@@ -1223,8 +1448,8 @@ class HomePageState extends State<HomePage> {
                 ),
               ),
             ),
-            const Text(
-              'Zimbabwe USD',
+            Text(
+              '$currency',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
@@ -1284,12 +1509,11 @@ class HomePageState extends State<HomePage> {
       ),
       body: ListView(
         children: <Widget>[
-          Row(children:[
-          Expanded(child:
-          Container(
-            padding: const EdgeInsets.only(top: 10, left: 20, right: 20),
-            child:
-            Column(children:[
+          Row(children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.only(top: 10, left: 20, right: 20),
+                child: Column(children: [
                   SelectFormField(
                     type: SelectFormFieldType.dialog,
                     controller: null,
@@ -1310,58 +1534,58 @@ class HomePageState extends State<HomePage> {
                     onSaved: (val) => setState(() => _valueSaved0 = val ?? ''),
                   ),
                 ]),
-    ),),
-          Expanded(child:
-          Container(
-            padding: const EdgeInsets.only(top: 10, left: 20, right: 20),
-            child:
-            Column(children:[
-              SelectFormField(
-                type: SelectFormFieldType.dialog,
-                controller: null,
-                //initialValue: _initialValue,
-                icon: null,
-                labelText: the_month,
-                changeIcon: true,
-                dialogTitle: '',
-                dialogCancelBtn: 'Close',
-                enableSearch: false,
-                dialogSearchHint: 'Search',
-                items: _items,
-                onChanged: (val) => setState(() => _valueChanged = val),
-                validator: (val) {
-                  setState(() => _valueToValidate = val ?? '');
-                  return null;
-                },
-                onSaved: (val) => setState(() => _valueSaved = val ?? ''),
               ),
-            ]),
-          ),),
-        ]),
-                // const Text(" "),
-                // const Text(" "),
-                // const Text(" "),
-                // const Text(" "),
-                // SelectFormField(
-                //   type: SelectFormFieldType.dialog,
-                //   controller: null,
-                //   //initialValue: _initialValue,
-                //   icon: null,
-                //   labelText: the_month,
-                //   changeIcon: true,
-                //   dialogTitle: '',
-                //   dialogCancelBtn: 'Close',
-                //   enableSearch: false,
-                //   dialogSearchHint: 'Search',
-                //   items: _items,
-                //   onChanged: (val) => setState(() => _valueChanged = val),
-                //   validator: (val) {
-                //     setState(() => _valueToValidate = val ?? '');
-                //     return null;
-                //   },
-                //   onSaved: (val) => setState(() => _valueSaved = val ?? ''),
-                // ),
-
+            ),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.only(top: 10, left: 20, right: 20),
+                child: Column(children: [
+                  SelectFormField(
+                    type: SelectFormFieldType.dialog,
+                    controller: null,
+                    //initialValue: _initialValue,
+                    icon: null,
+                    labelText: the_month,
+                    changeIcon: true,
+                    dialogTitle: '',
+                    dialogCancelBtn: 'Close',
+                    enableSearch: false,
+                    dialogSearchHint: 'Search',
+                    items: _items,
+                    onChanged: (val) => setState(() => _valueChanged = val),
+                    validator: (val) {
+                      setState(() => _valueToValidate = val ?? '');
+                      return null;
+                    },
+                    onSaved: (val) => setState(() => _valueSaved = val ?? ''),
+                  ),
+                ]),
+              ),
+            ),
+          ]),
+          // const Text(" "),
+          // const Text(" "),
+          // const Text(" "),
+          // const Text(" "),
+          // SelectFormField(
+          //   type: SelectFormFieldType.dialog,
+          //   controller: null,
+          //   //initialValue: _initialValue,
+          //   icon: null,
+          //   labelText: the_month,
+          //   changeIcon: true,
+          //   dialogTitle: '',
+          //   dialogCancelBtn: 'Close',
+          //   enableSearch: false,
+          //   dialogSearchHint: 'Search',
+          //   items: _items,
+          //   onChanged: (val) => setState(() => _valueChanged = val),
+          //   validator: (val) {
+          //     setState(() => _valueToValidate = val ?? '');
+          //     return null;
+          //   },
+          //   onSaved: (val) => setState(() => _valueSaved = val ?? ''),
+          // ),
 
           Container(
             padding: const EdgeInsets.only(top: 10, left: 20, right: 20),
@@ -1378,7 +1602,7 @@ class HomePageState extends State<HomePage> {
                 backgroundColor: Colors.red,
                 strokeWidth: 20,
                 strokeCap: StrokeCap.square,
-                progress: rp / 100,
+                progress: rp,
                 bottomPadding: 5,
                 contain: true,
                 child: Column(
@@ -1400,15 +1624,15 @@ class HomePageState extends State<HomePage> {
                           color: Colors.blue),
                     ),
                     Text(
-                      '\nNet Position',
+                      '\nProjected Net Position',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Colors.green),
+                          color: npColor),
                     ),
                     Text(
-                      '\$' + profit2.toStringAsFixed(0) + ' \n',
+                      '' + projected.toStringAsFixed(0) + ' \n',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 16,
@@ -1502,12 +1726,8 @@ class HomePageState extends State<HomePage> {
                 decoration: BoxDecoration(
                     color: Colors.orange,
                     borderRadius: BorderRadius.all(Radius.circular(10))),
-                child: _buildInsight2Column(
-                    Colors.orange,
-                    Colors.black,
-                    '       MTD       ',
-                    '$fixedCosts',
-                    '  Fixed Costs    \n'),
+                child: _buildInsight2Column(Colors.orange, Colors.black,
+                    '       MTD       ', '$fixedCosts', '  Fixed Costs    \n'),
               ),
             ],
           ),
@@ -1527,25 +1747,33 @@ class HomePageState extends State<HomePage> {
               // ),
               child: SfCartesianChart(
                   primaryXAxis: CategoryAxis(),
+                  palette: <Color>[Colors.green, Colors.red, Colors.blue],
                   // Chart title
                   title: null,
                   // Enable legend
                   legend: Legend(isVisible: false),
                   // Enable tooltip
                   tooltipBehavior: TooltipBehavior(enable: true),
-                  series: <ChartSeries<_SalesData, String>>[
-                    LineSeries<_SalesData, String>(
+                  series: <ChartSeries<_SalesData2, String>>[
+                    LineSeries<_SalesData2, String>(
                         dataSource: data2,
-                        xValueMapper: (_SalesData sales, _) => sales.year,
-                        yValueMapper: (_SalesData sales, _) => sales.sales,
+                        xValueMapper: (_SalesData2 sales, _) => sales.year,
+                        yValueMapper: (_SalesData2 sales, _) => sales.sales,
                         name: 'Revenue',
                         // Enable data label
                         dataLabelSettings: DataLabelSettings(isVisible: false)),
-                    LineSeries<_SalesData, String>(
+                    LineSeries<_SalesData2, String>(
                         dataSource: data,
-                        xValueMapper: (_SalesData sales, _) => sales.year,
-                        yValueMapper: (_SalesData sales, _) => sales.sales,
+                        xValueMapper: (_SalesData2 sales, _) => sales.year,
+                        yValueMapper: (_SalesData2 sales, _) => sales.sales,
                         name: 'Expenses',
+                        // Enable data label
+                        dataLabelSettings: DataLabelSettings(isVisible: false)),
+                    LineSeries<_SalesData2, String>(
+                        dataSource: data3,
+                        xValueMapper: (_SalesData2 sales, _) => sales.year,
+                        yValueMapper: (_SalesData2 sales, _) => sales.sales,
+                        name: 'Budgeted Fixed Costs',
                         // Enable data label
                         dataLabelSettings: DataLabelSettings(isVisible: false))
                   ]),
@@ -1557,9 +1785,11 @@ class HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text('Revenue'),
-                Icon(Icons.square, color: Colors.blue),
+                Icon(Icons.square, color: Colors.green),
                 Text('Expenses'),
-                Icon(Icons.square, color: Colors.grey),
+                Icon(Icons.square, color: Colors.red),
+                Text('Fixed Budget'),
+                Icon(Icons.square, color: Colors.blue),
               ],
             ),
           ),
@@ -1589,7 +1819,7 @@ class HomePageState extends State<HomePage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.attach_money_sharp),
-            label: 'Funding',
+            label: 'Valuation',
           ),
         ],
         currentIndex: _selectedIndex,
@@ -1608,18 +1838,25 @@ class _SalesData {
   final double sales;
 }
 
+class _SalesData2 {
+  _SalesData2(this.year, this.sales);
+
+  final String year;
+  final double sales;
+}
+
 class SecondRoute extends StatefulWidget {
   // ignore: prefer_const_constructors_in_immutables
   //SecondRoute({Key? key}) : super(key: key);
 
   SecondRoute(
       {super.key,
-        required this.ky,
-        required this.amount,
-        required this.plan,
-        required this.comment,
-        required this.date,
-        required this.margin});
+      required this.ky,
+      required this.amount,
+      required this.plan,
+      required this.comment,
+      required this.date,
+      required this.margin});
   final String amount;
   final String plan;
   final String comment;
@@ -1643,7 +1880,7 @@ class SecondRouteState extends State<SecondRoute> {
 
     switch (index) {
       case 0:
-      // only scroll to top when current index is selected.
+        // only scroll to top when current index is selected.
         Navigator.push(
             context, MaterialPageRoute(builder: (context) => SignIn()));
         break;
@@ -1669,6 +1906,7 @@ class SecondRouteState extends State<SecondRoute> {
                     children: [
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -1679,8 +1917,12 @@ class SecondRouteState extends State<SecondRoute> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('Income Statement')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -1691,18 +1933,44 @@ class SecondRouteState extends State<SecondRoute> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('     Balance Sheet   ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                              MaterialPageRoute(
+                                  builder: (context) => FundingPage()),
                             ); // Navigate back to first route when tapped.
                           },
-                          child: Text('     $threeQuarterTurn Business Advisory  ')),
+                          child: Text('     Funding  ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text(
+                              '     $threeQuarterTurn Business Advisory  ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 15),
@@ -1718,23 +1986,20 @@ class SecondRouteState extends State<SecondRoute> {
         break;
       case 4:
         Navigator.push(
-            context, MaterialPageRoute(builder: (context) => FundingPage()));
+            context, MaterialPageRoute(builder: (context) => ValuationPage()));
         break;
     }
   }
+
   final User? user = Auth().currentUser;
 
-
-
-
   late DatabaseReference reference;
-  String sme = '';
+  String sme = '', currency = '';
   String uid = '';
 
   // <-- Their email
 
   //const SecondRoute({super.key});
-
 
   @override
   Widget build(BuildContext context) {
@@ -1772,7 +2037,7 @@ class SecondRouteState extends State<SecondRoute> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '\$' + widget.amount,
+                        '' + widget.amount,
                         style: TextStyle(
                           fontSize: 38,
                         ),
@@ -1811,8 +2076,8 @@ class SecondRouteState extends State<SecondRoute> {
             ElevatedButton(
               onPressed: () {
                 uid = user?.uid ?? 'uid';
-                reference =
-                    FirebaseDatabase.instance.ref("Revenue/" + uid + "/" + widget.ky);
+                reference = FirebaseDatabase.instance
+                    .ref("Revenue/" + uid + "/" + widget.ky);
 
                 reference.remove();
                 Navigator.pop(context);
@@ -1851,7 +2116,7 @@ class SecondRouteState extends State<SecondRoute> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.attach_money_sharp),
-            label: 'Funding',
+            label: 'Valuation',
           ),
         ],
         currentIndex: 1,
@@ -1869,12 +2134,12 @@ class ThirdRoute extends StatefulWidget {
 
   ThirdRoute(
       {super.key,
-        required this.ky,
-        required this.amount,
-        required this.plan,
-        required this.comment,
-        required this.date,
-        required this.margin});
+      required this.ky,
+      required this.amount,
+      required this.plan,
+      required this.comment,
+      required this.date,
+      required this.margin});
   final String amount;
   final String plan;
   final String comment;
@@ -1898,7 +2163,7 @@ class ThirdRouteState extends State<ThirdRoute> {
 
     switch (index) {
       case 0:
-      // only scroll to top when current index is selected.
+        // only scroll to top when current index is selected.
         Navigator.push(
             context, MaterialPageRoute(builder: (context) => SignIn()));
         break;
@@ -1924,6 +2189,7 @@ class ThirdRouteState extends State<ThirdRoute> {
                     children: [
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -1934,8 +2200,12 @@ class ThirdRouteState extends State<ThirdRoute> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('Income Statement')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -1946,18 +2216,44 @@ class ThirdRouteState extends State<ThirdRoute> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('     Balance Sheet   ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                              MaterialPageRoute(
+                                  builder: (context) => FundingPage()),
                             ); // Navigate back to first route when tapped.
                           },
-                          child: Text('     $threeQuarterTurn Business Advisory  ')),
+                          child: Text('     Funding  ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text(
+                              '     $threeQuarterTurn Business Advisory  ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 15),
@@ -1973,17 +2269,15 @@ class ThirdRouteState extends State<ThirdRoute> {
         break;
       case 4:
         Navigator.push(
-            context, MaterialPageRoute(builder: (context) => FundingPage()));
+            context, MaterialPageRoute(builder: (context) => ValuationPage()));
         break;
     }
   }
-
 
   final User? user = Auth().currentUser;
   String uid = '';
   late DatabaseReference reference;
   //const SecondRoute({super.key});
-
 
   @override
   Widget build(BuildContext context) {
@@ -2019,7 +2313,7 @@ class ThirdRouteState extends State<ThirdRoute> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '\$' + widget.amount,
+                        '' + widget.amount,
                         style: TextStyle(
                           fontSize: 38,
                         ),
@@ -2058,8 +2352,8 @@ class ThirdRouteState extends State<ThirdRoute> {
             ElevatedButton(
               onPressed: () {
                 uid = user?.uid ?? 'uid';
-                reference =
-                    FirebaseDatabase.instance.ref("Expenses/" + uid + "/" + widget.ky);
+                reference = FirebaseDatabase.instance
+                    .ref("Expenses/" + uid + "/" + widget.ky);
 
                 reference.remove();
                 Navigator.pop(context);
@@ -2075,7 +2369,6 @@ class ThirdRouteState extends State<ThirdRoute> {
               },
               child: const Text('Back!'),
             ),
-
           ],
         ),
       ),
@@ -2099,7 +2392,7 @@ class ThirdRouteState extends State<ThirdRoute> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.attach_money_sharp),
-            label: 'Funding',
+            label: 'Valuation',
           ),
         ],
         currentIndex: 3,
@@ -2158,6 +2451,7 @@ class RevenuePageState extends State<RevenuePage> {
                     children: [
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -2168,8 +2462,12 @@ class RevenuePageState extends State<RevenuePage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('Income Statement')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -2180,18 +2478,41 @@ class RevenuePageState extends State<RevenuePage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('     Balance Sheet   ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                              MaterialPageRoute(
+                                  builder: (context) => FundingPage()),
                             ); // Navigate back to first route when tapped.
                           },
-                          child: Text('     $threeQuarterTurn Business Advisory   ')),
+                          child: Text('     Funding  ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text(
+                              '     $threeQuarterTurn Business Advisory   ')),
                     ],
                   ),
                   const SizedBox(height: 15),
@@ -2207,7 +2528,7 @@ class RevenuePageState extends State<RevenuePage> {
         break;
       case 4:
         Navigator.push(
-            context, MaterialPageRoute(builder: (context) => FundingPage()));
+            context, MaterialPageRoute(builder: (context) => ValuationPage()));
         break;
     }
   }
@@ -2230,7 +2551,7 @@ class RevenuePageState extends State<RevenuePage> {
   late Query dbRef;
   late DatabaseReference reference, reference1;
   String currentValue = '0';
-  String sme = '';
+  String sme = '', currency = '';
 
   getDateValue(date) {
     String uid = user?.uid ?? 'uid';
@@ -2242,27 +2563,41 @@ class RevenuePageState extends State<RevenuePage> {
       Map rev = event.snapshot.value as Map;
       currentValue = rev['amount'];
       // rev['key'] = event.snapshot.key;
-
     });
-
-
   }
 
-  Future<void> updateMonthlyRevenue(amount, date,cogs) async {
+  Future<void> updateMonthlyRevenue(amount, date, cogs) async {
     double currentValue = 0, newValue = 0;
     double currentCOGS = 0, newCOGS = 0;
-    DatabaseReference refe,refe2,refe3;
+    DatabaseReference refe, refe2, refe3;
     String uid = user?.uid ?? 'uid';
 
-    refe3 = FirebaseDatabase.instance
-        .ref()
-        .child('Expenses/' + uid + '/'+date);
+    refe3 =
+        FirebaseDatabase.instance.ref().child('Expenses/' + uid + '/' + date);
     refe2 = FirebaseDatabase.instance
         .ref()
         .child('trackExpenses/' + uid + '/' + actualMonthRef + "/" + date);
     refe = FirebaseDatabase.instance
         .ref()
         .child('trackRevenue' + '/' + uid + '/' + actualMonthRef + "/" + date);
+
+    DatabaseReference np_refe;
+    double net_position = 0;
+    np_refe = FirebaseDatabase.instance
+        .ref()
+        .child('net_position/' + uid + '/' + actualMonthRef);
+    FirebaseDatabase.instance
+        .ref()
+        .child('net_position/' + uid + '/')
+        .onChildAdded
+        .listen((event) {
+      Map rev = event.snapshot.value as Map;
+      setState(() {
+        if (rev['month'] == actualMonthRef) {
+          net_position = double.parse(rev['amount']);
+        }
+      });
+    });
 
     FirebaseDatabase.instance
         .ref()
@@ -2273,9 +2608,8 @@ class RevenuePageState extends State<RevenuePage> {
       setState(() {
         if (rev['date'] == date) {
           currentValue = double.parse(rev['amount']);
-          currentCOGS=double.parse(rev['cogs']);
+          currentCOGS = double.parse(rev['cogs']);
         }
-
       });
     });
 
@@ -2283,16 +2617,20 @@ class RevenuePageState extends State<RevenuePage> {
 
     newValue = currentValue + double.parse(amount);
     newCOGS = currentCOGS + cogs;
-
+    net_position += double.parse(amount) - cogs;
+    Map<String, String> trackNP = {
+      'amount': net_position.toString(),
+      'month': actualMonthRef,
+    };
+    np_refe.set(trackNP);
 
     Map<String, String> trackRevenue = {
       'amount': newValue.toString(),
       'date': date,
-      'cogs':newCOGS.toString(),
+      'cogs': newCOGS.toString(),
     };
     Map<String, String> trackExp = {
-
-      'cogs':newCOGS.toString(),
+      'cogs': newCOGS.toString(),
     };
     Map<String, String> addToExpense = {
       'amount': newCOGS.toString(),
@@ -2302,7 +2640,7 @@ class RevenuePageState extends State<RevenuePage> {
       'plan': 'COGS',
     };
     refe.set(trackRevenue);
-   refe2.update(trackExp);
+    refe2.update(trackExp);
     refe3.update(addToExpense);
   }
 
@@ -2325,10 +2663,7 @@ class RevenuePageState extends State<RevenuePage> {
         'trackMorningMessage/' + uid + '/' + actualMonthRef + '/' + actualDate);
     DataSnapshot snapshot = await dbRefe.get();
 
-
-
     if (snapshot.value == null) {
-
       Map<String, String> cartegories = {
         'Advertising': '0',
       };
@@ -2338,7 +2673,7 @@ class RevenuePageState extends State<RevenuePage> {
         builder: (BuildContext context) => AlertDialog(
           title: const Text('Rise and shine.'),
           content: Text(
-              'New day! New opportunities! Your revenue target for today is \$' +
+              'New day! New opportunities! Your revenue target for today is ' +
                   budget.toStringAsFixed(2)),
           actions: <Widget>[
             // TextButton(
@@ -2355,13 +2690,10 @@ class RevenuePageState extends State<RevenuePage> {
           ],
         ),
       );
-    } else {
-
-    }
+    } else {}
 
     Timer mytimer = Timer.periodic(Duration(seconds: 1800), (timer) {
       if (snapshot.value == null) {
-
         Map<String, String> cartegories = {
           'Advertising': '0',
         };
@@ -2371,7 +2703,7 @@ class RevenuePageState extends State<RevenuePage> {
           builder: (BuildContext context) => AlertDialog(
             title: const Text('Rise and shine.'),
             content: Text(
-                'New day! New opportunities! Your revenue target for today is \$' +
+                'New day! New opportunities! Your revenue target for today is ' +
                     budget.toStringAsFixed(2)),
             actions: <Widget>[
               // TextButton(
@@ -2388,9 +2720,7 @@ class RevenuePageState extends State<RevenuePage> {
             ],
           ),
         );
-      } else {
-
-      }
+      } else {}
     });
   }
 
@@ -2400,7 +2730,8 @@ class RevenuePageState extends State<RevenuePage> {
 
     String uid = user?.uid ?? 'uid'; // <-- Their email
     String mail = user?.email ?? 'email';
-
+    int k = 0;
+    String tt = "";
     morningMessage();
 
     FirebaseDatabase.instance
@@ -2411,13 +2742,22 @@ class RevenuePageState extends State<RevenuePage> {
       Map revenue = event.snapshot.value as Map;
 
       setState(() {
-        budget = double.parse(revenue['revenueBudget'])/30;
+        budget = double.parse(revenue['revenueBudget']) / 30;
+        for (var i = 0; i < 31; i++) {
+          if (i < 10) {
+            tt = "0" + i.toString();
+            data.add(_SalesData(tt, budget));
+          } else {
+            data.add(_SalesData(i.toString(), budget));
+          }
+        }
       });
     });
     FirebaseDatabase.instance
         .ref()
         .child('trackRevenue/' + uid + '/' + actualMonthRef + "/")
-        .orderByChild('date').limitToLast(30)
+        .orderByChild('date')
+        .limitToLast(30)
         .onChildAdded
         .listen((event) {
       Map rev = event.snapshot.value as Map;
@@ -2425,10 +2765,19 @@ class RevenuePageState extends State<RevenuePage> {
         if (rev['date'] == actualDate) {
           dailyRev += double.parse(rev['amount']);
         }
-
+        if (k < 1) {
+          k++;
+          for (int i = 0; i < int.parse(rev['date'].substring(0, 2)); i++) {
+            if (i < 10) {
+              data2.add(_SalesData("0" + i.toString(), 0));
+            } else {
+              data2.add(_SalesData(i.toString(), 0));
+            }
+          }
+        }
         data2.add(_SalesData(
             rev['date'].substring(0, 2), double.parse(rev['amount'])));
-        data.add(_SalesData(rev['date'].substring(0, 2),double.parse(budget.toStringAsFixed(0))));
+        //data.add(_SalesData(rev['date'].substring(0, 2),double.parse(budget.toStringAsFixed(0))));
       });
     });
 
@@ -2437,9 +2786,8 @@ class RevenuePageState extends State<RevenuePage> {
       if (user['email'] == mail) {
         setState(() {
           sme = user['sme'];
+          currency = user['currency'];
         });
-
-
       }
     });
     Map? revenueTrack;
@@ -2457,7 +2805,8 @@ class RevenuePageState extends State<RevenuePage> {
     FirebaseDatabase.instance
         .ref()
         .child('Revenue/' + uid)
-        .orderByChild("date").limitToLast(30)
+        .orderByChild("date")
+        .limitToLast(30)
         .onChildAdded
         .listen((event) {
       Map revenue = event.snapshot.value as Map;
@@ -2534,7 +2883,7 @@ class RevenuePageState extends State<RevenuePage> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '\$' + revenue['amount'],
+                        '' + revenue['amount'],
                         style: TextStyle(
                           fontSize: 38,
                         ),
@@ -2543,7 +2892,6 @@ class RevenuePageState extends State<RevenuePage> {
               ),
             ])));
   }
-
 
   final _formKey = GlobalKey<FormState>();
   @override
@@ -2564,8 +2912,8 @@ class RevenuePageState extends State<RevenuePage> {
                 ),
               ),
             ),
-            const Text(
-              'Zimbabwe USD',
+            Text(
+              '$currency',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
@@ -2633,6 +2981,7 @@ class RevenuePageState extends State<RevenuePage> {
                   ),
               child: SfCartesianChart(
                   primaryXAxis: CategoryAxis(),
+                  palette: <Color>[Colors.green, Colors.blue],
                   // Chart title
                   title:
                       ChartTitle(text: 'Month Revenue - $the_month $the_year'),
@@ -2663,9 +3012,9 @@ class RevenuePageState extends State<RevenuePage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text('Revenue'),
-                Icon(Icons.square, color: Colors.blue),
+                Icon(Icons.square, color: Colors.green),
                 Text('Budget'),
-                Icon(Icons.square, color: Colors.grey),
+                Icon(Icons.square, color: Colors.blue),
               ],
             ),
           ),
@@ -2678,7 +3027,7 @@ class RevenuePageState extends State<RevenuePage> {
                     color: Colors.grey,
                     child: Column(
                       children: [
-                        Text("\$" + dailyRev.toStringAsFixed(0)),
+                        Text("" + dailyRev.toStringAsFixed(0)),
                         const Text(''),
                         const Text('Daily Revenue'),
                       ],
@@ -2691,7 +3040,7 @@ class RevenuePageState extends State<RevenuePage> {
                     child: Column(
                       children: [
                         const Text('Average'),
-                        Text("\$" + averageRevenue.toStringAsFixed(0)),
+                        Text("" + averageRevenue.toStringAsFixed(0)),
                         const Text('Daily Revenue'),
                       ],
                     ),
@@ -2703,7 +3052,7 @@ class RevenuePageState extends State<RevenuePage> {
                     child: Column(
                       children: [
                         const Text('MTD'),
-                        Text("\$" + totalRevenue.toStringAsFixed(0)),
+                        Text("" + totalRevenue.toStringAsFixed(0)),
                         const Text('Revenue'),
                       ],
                     ),
@@ -2716,7 +3065,7 @@ class RevenuePageState extends State<RevenuePage> {
             onPressed: () => showDialog<String>(
               context: context,
               builder: (BuildContext context) => Dialog(
-                child:Form(
+                child: Form(
                   key: _formKey,
                   child: ListView(
                     padding: const EdgeInsets.all(8.0),
@@ -2749,7 +3098,7 @@ class RevenuePageState extends State<RevenuePage> {
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
-                              labelText: 'Amount \$',
+                              labelText: 'Amount ',
                               hintText: 'Enter Amount',
                             ),
                           ),
@@ -2860,7 +3209,11 @@ class RevenuePageState extends State<RevenuePage> {
                                 //
                                 // ),
                                 onPressed: () {
-                                  if (_formKey.currentState!.validate()){
+                                  if (_formKey.currentState!.validate()) {
+                                    if(dateController.text=="")
+                                    {
+                                      dateController.text=actualDate;
+                                    }
                                     Map<String, String> revenue = {
                                       'amount': amountController.text,
                                       'margin': marginController.text,
@@ -2870,13 +3223,18 @@ class RevenuePageState extends State<RevenuePage> {
                                     };
 
                                     Map<String, String> trackRevenue = {
-                                      dateController.text: amountController.text,
+                                      dateController.text:
+                                          amountController.text,
                                     };
-                                    double amo=double.parse(amountController.text);
-                                    double margi=(100-double.parse(marginController.text))/100;
-                                    double cogs=amo*margi;
-                                    updateMonthlyRevenue(
-                                        amountController.text, dateController.text,cogs);
+                                    double amo =
+                                        double.parse(amountController.text);
+                                    double margi = (100 -
+                                            double.parse(
+                                                marginController.text)) /
+                                        100;
+                                    double cogs = amo * margi;
+                                    updateMonthlyRevenue(amountController.text,
+                                        dateController.text, cogs);
 
                                     reference.push().set(revenue);
                                     //reference1.set(trackRevenue);
@@ -2911,7 +3269,8 @@ class RevenuePageState extends State<RevenuePage> {
                         ],
                       ),
                     ],
-                  ),),
+                  ),
+                ),
               ),
             ),
             child: const Text('Add Daily Revenue'),
@@ -2941,7 +3300,6 @@ class RevenuePageState extends State<RevenuePage> {
           const SizedBox(
             height: 30, // <-- SEE HERE
           ),
-
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -2964,7 +3322,7 @@ class RevenuePageState extends State<RevenuePage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.attach_money_sharp),
-            label: 'Funding',
+            label: 'Valuation',
           ),
         ],
         currentIndex: _selectedIndex,
@@ -2987,17 +3345,27 @@ class FundingPage extends StatefulWidget {
 
 class FundingPageState extends State<FundingPage> {
   final User? user = Auth().currentUser;
-  int _selectedIndex = 4;
+  int _selectedIndex = 2;
 
   ////calculate profit start
 
   double profit2 = 0;
-  void calculateProfit() async{
+  void calculateProfit() async {
     String uid = user?.uid ?? 'uid';
-    double totalRevenue = 0,cogs=0,gp=0;
+    double totalRevenue = 0, cogs = 0, gp = 0;
 
-    double totalExpense = 0,fixedCosts=0;
+    double totalExpense = 0, fixedCosts = 0;
 
+    FirebaseDatabase.instance
+        .ref()
+        .child('net_position/' + uid + '/')
+        .onChildAdded
+        .listen((event) {
+      Map rev = event.snapshot.value as Map;
+      setState(() {
+        profit2 += double.parse(rev['amount']);
+      });
+    });
 
     String a = '0',
         a1 = '0',
@@ -3014,17 +3382,15 @@ class FundingPageState extends State<FundingPage> {
         a12 = '0';
     FirebaseDatabase.instance
         .ref()
-        .child('trackFixedCosts/' + uid+'/'+actualMonthRef)
+        .child('trackFixedCosts/' + uid + '/' + actualMonthRef)
         .onChildAdded
         .listen((event) {
       Map revenue = event.snapshot.value as Map;
 
       setState(() {
         fixedCosts += double.parse(revenue['amount']);
-
       });
     });
-
 
     FirebaseDatabase.instance
         .ref()
@@ -3034,7 +3400,6 @@ class FundingPageState extends State<FundingPage> {
       Map exp = event.snapshot.value as Map;
 
       setState(() {
-
         a = exp['Advertising'];
         a1 = exp['Business Vehicle(s) Repairs'];
         a2 = exp['Employee Commissions'];
@@ -3063,18 +3428,21 @@ class FundingPageState extends State<FundingPage> {
             double.parse(a11) +
             double.parse(a12);
 
-        profit2 = totalRevenue - totalExpense - cogs;
-
+        //profit2 = totalRevenue - totalExpense - cogs;
       });
     });
-    FirebaseDatabase.instance.ref().child('Revenue' + '/' + uid).onChildAdded.listen((event) {
+    FirebaseDatabase.instance
+        .ref()
+        .child('Revenue' + '/' + uid)
+        .onChildAdded
+        .listen((event) {
       Map revenue = event.snapshot.value as Map;
       setState(() {
         cogs += (double.parse(revenue['amount']) *
-            (100 - double.parse(revenue['margin']))) /
+                (100 - double.parse(revenue['margin']))) /
             100;
         totalRevenue += double.parse(revenue['amount']);
-        profit2 = totalRevenue - totalExpense - cogs;
+        //profit2 = totalRevenue - totalExpense - cogs;
 
         gp = totalRevenue - cogs;
       });
@@ -3082,10 +3450,24 @@ class FundingPageState extends State<FundingPage> {
     await Future.delayed(Duration(seconds: 1));
 
     setState(() {
-      profit2 = totalRevenue - totalExpense - cogs;
+      // profit2 = totalRevenue - totalExpense - cogs;
+      if (profit2 > 0) {
+        minus = "";
+        pos = profit2.toStringAsFixed(2);
+        eq = " ";
+      }
+      if (profit2 == 0) {
+        minus = " ";
+        pos = " ";
+        eq = profit2.toStringAsFixed(2);
+      }
+      if (profit2 > 0) {
+        funding = profit2 * 2.5;
+      } else {
+        funding = 0;
+      }
     });
   }
-
 
 //// calculate profit end
   // Check if the user is signed in
@@ -3121,6 +3503,7 @@ class FundingPageState extends State<FundingPage> {
                     children: [
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -3131,8 +3514,12 @@ class FundingPageState extends State<FundingPage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('Income Statement')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -3143,18 +3530,41 @@ class FundingPageState extends State<FundingPage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('     Balance Sheet   ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                              MaterialPageRoute(
+                                  builder: (context) => FundingPage()),
                             ); // Navigate back to first route when tapped.
                           },
-                          child: Text('     $threeQuarterTurn Business Advisory   ')),
+                          child: Text('     Funding  ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text(
+                              '     $threeQuarterTurn Business Advisory   ')),
                     ],
                   ),
                   const SizedBox(height: 15),
@@ -3170,7 +3580,7 @@ class FundingPageState extends State<FundingPage> {
         break;
       case 4:
         Navigator.push(
-            context, MaterialPageRoute(builder: (context) => FundingPage()));
+            context, MaterialPageRoute(builder: (context) => ValuationPage()));
         break;
     }
   }
@@ -3181,7 +3591,7 @@ class FundingPageState extends State<FundingPage> {
   String _valueSaved = '';
   final List<Map<String, dynamic>> _items = [
     {
-      'value': '5',
+      'value': '2.5',
       'label': 'Equipment',
       'icon': Icon(Icons.smart_toy_outlined),
     },
@@ -3196,9 +3606,9 @@ class FundingPageState extends State<FundingPage> {
       'icon': Icon(Icons.people_rounded),
     },
     {
-      'value':
-          '5',
-      'label': 'Our support is highly prioritised towards value adding equipment in order to build manufacturing capacity for small businesses in Africa.',
+      'value': '5',
+      'label':
+          'Our support is highly prioritised towards value adding equipment in order to build manufacturing capacity for small businesses in Africa.',
       'icon': null,
     }
   ];
@@ -3322,7 +3732,7 @@ class FundingPageState extends State<FundingPage> {
 
   late Query dbRef;
   late DatabaseReference reference;
-  String sme = "";
+  String sme = "", currency = "";
   @override
   void initState() {
     super.initState();
@@ -3334,9 +3744,8 @@ class FundingPageState extends State<FundingPage> {
       if (user['email'] == mail) {
         setState(() {
           sme = user['sme'];
+          currency = user['currency'];
         });
-
-
       }
     });
 
@@ -3354,28 +3763,10 @@ class FundingPageState extends State<FundingPage> {
         fundingp = funding / 100000;
         pol = totalRevenue - totalExpenses;
 
-
         if (profit2 < 0) {
           minus = profit2.toStringAsFixed(2);
           pos = " ";
           eq = " ";
-        }
-        if (profit2 > 0) {
-          minus = "";
-          pos = profit2.toStringAsFixed(2);
-          eq = " ";
-        }
-        if (profit2 == 0) {
-          minus = " ";
-          pos = " ";
-          eq = profit2.toStringAsFixed(2);
-        }
-        if(profit2>0) {
-          funding = profit2 * 2.5;
-        }
-        else
-        {
-          funding=0;
         }
       });
     });
@@ -3393,23 +3784,6 @@ class FundingPageState extends State<FundingPage> {
           minus = profit2.toStringAsFixed(2);
           pos = " ";
           eq = " ";
-        }
-        if (profit2 > 0) {
-          minus = " ";
-          pos = profit2.toStringAsFixed(2);
-          eq = " ";
-        }
-        if (profit2 == 0) {
-          minus = " ";
-          pos = " ";
-          eq = profit2.toStringAsFixed(2);
-        }
-        if(profit2>0) {
-          funding = profit2 * 5;
-        }
-        else
-        {
-          funding=0;
         }
       });
     });
@@ -3433,8 +3807,8 @@ class FundingPageState extends State<FundingPage> {
                 ),
               ),
             ),
-            const Text(
-              'Zimbabwe USD',
+            Text(
+              '$currency',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
@@ -3600,7 +3974,7 @@ class FundingPageState extends State<FundingPage> {
                     Radius.circular(15),
                   ),
                 ),
-                child: Text("\$" + funding.toStringAsFixed(2)),
+                child: Text("" + funding.toStringAsFixed(2)),
               ),
               Container(
                 padding: const EdgeInsets.all(17),
@@ -3617,18 +3991,15 @@ class FundingPageState extends State<FundingPage> {
                   dialogSearchHint: 'Search',
                   items: _items,
                   onChanged: (val) {
-    setState(() {
-                            _valueChanged = val;
+                    setState(() {
+                      _valueChanged = val;
 
-                        if(profit2>0)
-                    {
-                      funding = profit2*double.parse(val);
-                    }else
-                    {
-                    funding=0;
-                    }
-    });
-
+                      if (profit2 > 0) {
+                        funding = profit2 * double.parse(val);
+                      } else {
+                        funding = 0;
+                      }
+                    });
                   },
                   validator: (val) {
                     setState(() => _valueToValidate = val ?? '');
@@ -3689,7 +4060,7 @@ class FundingPageState extends State<FundingPage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.attach_money_sharp),
-            label: 'Funding',
+            label: 'Valuation',
           ),
         ],
         currentIndex: _selectedIndex,
@@ -3752,6 +4123,7 @@ class ExpensesPageState extends State<ExpensesPage> {
                     children: [
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -3762,8 +4134,12 @@ class ExpensesPageState extends State<ExpensesPage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('Income Statement')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -3774,18 +4150,41 @@ class ExpensesPageState extends State<ExpensesPage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('     Balance Sheet   ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                              MaterialPageRoute(
+                                  builder: (context) => FundingPage()),
                             ); // Navigate back to first route when tapped.
                           },
-                          child: Text('     $threeQuarterTurn Business Advisory   ')),
+                          child: Text('     Funding  ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text(
+                              '     $threeQuarterTurn Business Advisory   ')),
                     ],
                   ),
                   const SizedBox(height: 15),
@@ -3801,7 +4200,7 @@ class ExpensesPageState extends State<ExpensesPage> {
         break;
       case 4:
         Navigator.push(
-            context, MaterialPageRoute(builder: (context) => FundingPage()));
+            context, MaterialPageRoute(builder: (context) => ValuationPage()));
         break;
     }
   }
@@ -3889,13 +4288,31 @@ class ExpensesPageState extends State<ExpensesPage> {
   double percentageExpenses = 0;
   double fixedCosts = 0, dailyExp = 0;
   int countExpenses = 0;
-  String sme = '';
+  String sme = '', currency = '';
 
   Future<void> updateMonthlyExpenses(amount, date, cart) async {
     double currentValue = 0, newValue = 0, cartValue = 0, cartNewValue = 0;
     String uid = user?.uid ?? 'uid';
     String? cartKey;
     DatabaseReference refe;
+    DatabaseReference np_refe;
+    double net_position = 0;
+    np_refe = FirebaseDatabase.instance
+        .ref()
+        .child('net_position/' + uid + '/' + actualMonthRef);
+    FirebaseDatabase.instance
+        .ref()
+        .child('net_position/' + uid + '/')
+        .onChildAdded
+        .listen((event) {
+      Map rev = event.snapshot.value as Map;
+      setState(() {
+        if (rev['month'] == actualMonthRef) {
+          net_position = double.parse(rev['amount']);
+        }
+      });
+    });
+
     refe = FirebaseDatabase.instance
         .ref()
         .child('trackExpenses/' + uid + '/' + actualMonthRef + "/" + date);
@@ -3904,7 +4321,6 @@ class ExpensesPageState extends State<ExpensesPage> {
         .child('trackExpensesCartegory/' + uid + '/' + actualMonthRef);
     DataSnapshot snapshot = await dbRefe.get();
     if (snapshot.value == null) {
-
       Map<String, String> cartegories = {
         'Advertising': '0',
         'Business Vehicle(s) Repairs': '0',
@@ -3923,9 +4339,7 @@ class ExpensesPageState extends State<ExpensesPage> {
       };
 
       dbRefe.set(cartegories);
-    } else {
-
-    }
+    } else {}
     await Future.delayed(Duration(seconds: 1));
     FirebaseDatabase.instance
         .ref()
@@ -3951,19 +4365,23 @@ class ExpensesPageState extends State<ExpensesPage> {
 
           // rev['key'] = event.snapshot.key;
         }
-
       });
     });
 
     await Future.delayed(Duration(seconds: 1));
     newValue = currentValue + double.parse(amount);
     cartNewValue = cartValue + double.parse(amount);
-
+    net_position -= double.parse(amount);
+    Map<String, String> trackNP = {
+      'amount': net_position.toString(),
+      'month': actualMonthRef,
+    };
+    np_refe.set(trackNP);
 
     Map<String, String> trackExpenses = {
       'amount': newValue.toString(),
       'date': date,
-      "cogs":"0",
+      "cogs": "0",
       cart: cartNewValue.toString(),
     };
 
@@ -3971,7 +4389,7 @@ class ExpensesPageState extends State<ExpensesPage> {
     Map<String, String> trackCart = {
       cart: cartNewValue.toString(),
       'month': actualMonthRef,
-      "cogs":"0",
+      "cogs": "0",
     };
 
     dbRefe.update(trackCart);
@@ -3982,6 +4400,7 @@ class ExpensesPageState extends State<ExpensesPage> {
     super.initState();
     String uid = user?.uid ?? 'uid';
     String mail = user?.email ?? 'email';
+    int k = 0;
 
     FirebaseDatabase.instance
         .ref()
@@ -3989,26 +4408,49 @@ class ExpensesPageState extends State<ExpensesPage> {
         .onChildAdded
         .listen((event) {
       Map revenue = event.snapshot.value as Map;
-
+      String tt = "";
       setState(() {
-        fixedCosts = double.parse(revenue['expensesTarget'])/30;
+        fixedCosts = double.parse(revenue['expensesTarget']) / 30;
+        for (var i = 0; i < 31; i++) {
+          if (i < 10) {
+            tt = "0" + i.toString();
+            data.add(_SalesData(tt, fixedCosts));
+          } else {
+            data.add(_SalesData(i.toString(), fixedCosts));
+          }
+        }
       });
     });
+    double tempAmount = 0, tempCOGS = 0;
     FirebaseDatabase.instance
         .ref()
         .child('trackExpenses/' + uid + '/' + actualMonthRef + "/")
-        .orderByChild('date').limitToLast(30)
+        .orderByChild('date')
+        .limitToLast(30)
         .onChildAdded
         .listen((event) {
       Map rev = event.snapshot.value as Map;
       setState(() {
-        if (rev['date'] == actualDate) {
-          dailyExp += double.parse(rev['amount'])+double.parse(rev['cogs']);
-        }
+        tempAmount = double.parse(rev['amount']);
 
-        data2.add(_SalesData(
-            rev['date'].substring(0, 2), double.parse(rev['amount'])+double.parse(rev['cogs'])));
-        data.add(_SalesData(rev['date'].substring(0, 2), double.parse(fixedCosts.toStringAsFixed(0))));
+        tempCOGS = double.parse(rev['cogs']);
+
+        if (rev['date'] == actualDate) {
+          dailyExp += tempAmount + tempCOGS;
+        }
+        if (k < 1) {
+          k++;
+          for (int i = 0; i < int.parse(rev['date'].substring(0, 2)); i++) {
+            if (i < 10) {
+              data2.add(_SalesData("0" + i.toString(), 0));
+            } else {
+              data2.add(_SalesData(i.toString(), 0));
+            }
+          }
+        }
+        data2.add(_SalesData(rev['date'].substring(0, 2),
+            double.parse(rev['amount']) + double.parse(rev['cogs'])));
+        // data.add(_SalesData(rev['date'].substring(0, 2), double.parse(fixedCosts.toStringAsFixed(0))));
       });
     });
     FirebaseDatabase.instance.ref().child('User/').onChildAdded.listen((event) {
@@ -4016,8 +4458,8 @@ class ExpensesPageState extends State<ExpensesPage> {
       if (user['email'] == mail) {
         setState(() {
           sme = user['sme'];
+          currency = user['currency'];
         });
-
       }
     });
     FirebaseDatabase.instance
@@ -4096,7 +4538,7 @@ class ExpensesPageState extends State<ExpensesPage> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '\$' + revenue['amount'],
+                        '' + revenue['amount'],
                         style: TextStyle(
                           fontSize: 38,
                         ),
@@ -4105,6 +4547,7 @@ class ExpensesPageState extends State<ExpensesPage> {
               ),
             ])));
   }
+
   final _formKey = GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) {
@@ -4124,8 +4567,8 @@ class ExpensesPageState extends State<ExpensesPage> {
                 ),
               ),
             ),
-            const Text(
-              'Zimbabwe USD',
+            Text(
+              '$currency',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
@@ -4185,52 +4628,53 @@ class ExpensesPageState extends State<ExpensesPage> {
         children: [
           //Initialize the chart widget
           Container(
-          padding: const EdgeInsets.all(10),
-          child:Row(children:
-          [
-            Expanded(
-                child:Column(children:[
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => ExpensesPage()),
-                      );
-                    },
-                    style: TextButton.styleFrom(
-                      primary: Colors.black,
-                      backgroundColor: Colors.white, // Background Color
-                    ),
-                    child: const Text(
-                      'Variable Costs',
-                      style: TextStyle(fontSize: 18),
-                    ),
+              padding: const EdgeInsets.all(10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(children: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => ExpensesPage()),
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          primary: Colors.black,
+                          backgroundColor: Colors.white, // Background Color
+                        ),
+                        child: const Text(
+                          'Variable Costs',
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ),
+                    ]),
                   ),
-                ]),
-            ),
-            Expanded(
-              child:Column(children:[
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => FixedCostsPage()),
-                    );
-                  },
-                  style: TextButton.styleFrom(
-                    primary: Colors.white,
-                    backgroundColor: Colors.blue, // Background Color
+                  Expanded(
+                    child: Column(children: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => FixedCostsPage()),
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          primary: Colors.white,
+                          backgroundColor: Colors.red, // Background Color
+                        ),
+                        child: const Text(
+                          'Fixed Costs',
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ),
+                    ]),
                   ),
-                  child: const Text(
-                    'Fixed Costs',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ),
-              ]),
-            ),
-          ],
-          )
-          ),
+                ],
+              )),
           Container(
             padding: const EdgeInsets.all(10),
             child: Container(
@@ -4240,6 +4684,7 @@ class ExpensesPageState extends State<ExpensesPage> {
                   ),
               child: SfCartesianChart(
                   primaryXAxis: CategoryAxis(),
+                  palette: <Color>[Colors.red, Colors.blue],
                   // Chart title
                   title:
                       ChartTitle(text: 'Month Expenses - $the_month $the_year'),
@@ -4270,9 +4715,9 @@ class ExpensesPageState extends State<ExpensesPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text('Expenses'),
+                Icon(Icons.square, color: Colors.red),
+                Text('Budget'),
                 Icon(Icons.square, color: Colors.blue),
-                Text('Fixed Costs'),
-                Icon(Icons.square, color: Colors.grey),
               ],
             ),
           ),
@@ -4285,7 +4730,7 @@ class ExpensesPageState extends State<ExpensesPage> {
                     color: Colors.grey,
                     child: Column(
                       children: [
-                        Text("\$" + dailyExp.toStringAsFixed(0)),
+                        Text("" + dailyExp.toStringAsFixed(0)),
                         const Text(''),
                         const Text('Daily Expenses'),
                       ],
@@ -4298,7 +4743,7 @@ class ExpensesPageState extends State<ExpensesPage> {
                     child: Column(
                       children: [
                         const Text('Average'),
-                        Text("\$" + percentageExpenses.toStringAsFixed(0)),
+                        Text("" + percentageExpenses.toStringAsFixed(0)),
                         const Text('Daily Expenses'),
                       ],
                     ),
@@ -4310,7 +4755,7 @@ class ExpensesPageState extends State<ExpensesPage> {
                     child: Column(
                       children: [
                         const Text('MTD'),
-                        Text("\$" + totalExpenses.toString()),
+                        Text("" + totalExpenses.toString()),
                         const Text('Expenses'),
                       ],
                     ),
@@ -4323,7 +4768,7 @@ class ExpensesPageState extends State<ExpensesPage> {
             onPressed: () => showDialog<String>(
               context: context,
               builder: (BuildContext context) => Dialog(
-                child:Form(
+                child: Form(
                   key: _formKey,
                   child: ListView(
                     padding: const EdgeInsets.all(8.0),
@@ -4346,7 +4791,6 @@ class ExpensesPageState extends State<ExpensesPage> {
                             height: 25,
                           ),
                           SelectFormField(
-
                             type: SelectFormFieldType.dialog,
                             controller: planController,
                             //initialValue: _initialValue,
@@ -4379,7 +4823,7 @@ class ExpensesPageState extends State<ExpensesPage> {
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
-                              labelText: 'Amount \$',
+                              labelText: 'Amount ',
                               hintText: 'Enter Amount',
                             ),
                           ),
@@ -4484,6 +4928,10 @@ class ExpensesPageState extends State<ExpensesPage> {
                                 // ),
                                 onPressed: () {
                                   if (_formKey.currentState!.validate()) {
+                                      if(dateController.text=="")
+                                    {
+                                      dateController.text=actualDate;
+                                    }
                                     Map<String, String> revenue = {
                                       'amount': amountController.text,
                                       'margin': marginController.text,
@@ -4492,12 +4940,15 @@ class ExpensesPageState extends State<ExpensesPage> {
                                       'plan': planController.text
                                     };
 
-                                    updateMonthlyExpenses(amountController.text,
-                                        dateController.text, planController.text);
+                                    updateMonthlyExpenses(
+                                        amountController.text,
+                                        dateController.text,
+                                        planController.text);
                                     reference.push().set(revenue);
 
                                     Navigator.pop(context);
-                                  };
+                                  }
+                                  ;
                                 },
                                 child: const Text('Save'),
                                 color: Colors.blue,
@@ -4527,7 +4978,8 @@ class ExpensesPageState extends State<ExpensesPage> {
                         ],
                       ),
                     ],
-                  ),),
+                  ),
+                ),
               ),
             ),
             child: const Text('Add Daily Expenses'),
@@ -4557,7 +5009,6 @@ class ExpensesPageState extends State<ExpensesPage> {
           SizedBox(
             height: 110, // <-- SEE HERE
           ),
-
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -4580,7 +5031,7 @@ class ExpensesPageState extends State<ExpensesPage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.attach_money_sharp),
-            label: 'Funding',
+            label: 'Valuation',
           ),
         ],
         currentIndex: _selectedIndex,
@@ -4653,6 +5104,7 @@ class ISPageState extends State<ISPage> {
                     children: [
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -4663,8 +5115,12 @@ class ISPageState extends State<ISPage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('Income Statement')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -4675,18 +5131,41 @@ class ISPageState extends State<ISPage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('     Balance Sheet   ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                              MaterialPageRoute(
+                                  builder: (context) => FundingPage()),
                             ); // Navigate back to first route when tapped.
                           },
-                          child: Text('     $threeQuarterTurn Business Advisory   ')),
+                          child: Text('     Funding  ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text(
+                              '     $threeQuarterTurn Business Advisory   ')),
                     ],
                   ),
                   const SizedBox(height: 15),
@@ -4702,7 +5181,7 @@ class ISPageState extends State<ISPage> {
         break;
       case 4:
         Navigator.push(
-            context, MaterialPageRoute(builder: (context) => FundingPage()));
+            context, MaterialPageRoute(builder: (context) => ValuationPage()));
         break;
     }
   }
@@ -4737,7 +5216,7 @@ class ISPageState extends State<ISPage> {
       a11 = '0',
       a12 = '0';
 
-  String sme = '';
+  String sme = '', currency = '';
 
   String UserName = "";
   @override
@@ -4751,14 +5230,13 @@ class ISPageState extends State<ISPage> {
       if (user['email'] == mail) {
         setState(() {
           sme = user['sme'];
+          currency = user['currency'];
         });
-
-
       }
     });
     FirebaseDatabase.instance
         .ref()
-        .child('trackFixedCosts/' + uid+'/'+actualMonthRef)
+        .child('trackFixedCosts/' + uid + '/' + actualMonthRef)
         .onChildAdded
         .listen((event) {
       Map revenue = event.snapshot.value as Map;
@@ -4777,7 +5255,6 @@ class ISPageState extends State<ISPage> {
       Map exp = event.snapshot.value as Map;
 
       setState(() {
-
         a = exp['Advertising'];
         a1 = exp['Business Vehicle(s) Repairs'];
         a2 = exp['Employee Commissions'];
@@ -4807,10 +5284,9 @@ class ISPageState extends State<ISPage> {
             double.parse(a12);
 
         profit = totalRevenue - totalExpense - cogs;
-
       });
     });
-    
+
     FirebaseDatabase.instance.ref().child('User/').onChildAdded.listen((event) {
       Map revenue = event.snapshot.value as Map;
       setState(() {
@@ -4846,6 +5322,7 @@ class ISPageState extends State<ISPage> {
     employees = getEmployeeData();
     employeeDataSource = EmployeeDataSource(employeeData: employees);
   }
+
 
   Widget listExpenses({required Map revenue}) {
     return Container(
@@ -4902,8 +5379,8 @@ class ISPageState extends State<ISPage> {
                 ),
               ),
             ),
-            const Text(
-              'Zimbabwe USD',
+            Text(
+              '$currency',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
@@ -4971,7 +5448,7 @@ class ISPageState extends State<ISPage> {
                     child: Column(
                       children: [
                         const Text("Total Revenue"),
-                        Text('\$' + totalRevenue.toString()),
+                        Text('' + totalRevenue.toString()),
                         const Text(''),
                       ],
                     ),
@@ -4988,7 +5465,7 @@ class ISPageState extends State<ISPage> {
                             color: Colors.red,
                           ),
                         ),
-                        Text("\$" + totalExpense.toString()),
+                        Text("" + totalExpense.toString()),
                         const Text(''),
                       ],
                     ),
@@ -5000,7 +5477,7 @@ class ISPageState extends State<ISPage> {
                     child: Column(
                       children: [
                         const Text('Net Position'),
-                        Text("\$" + profit.toStringAsFixed(2)),
+                        Text("" + profit.toStringAsFixed(2)),
                         const Text(''),
                       ],
                     ),
@@ -5036,7 +5513,7 @@ class ISPageState extends State<ISPage> {
                   const Text(
                     '    Less: COGS',
                     style: TextStyle(
-                      color: Colors.red,
+                      color: Colors.grey,
                     ),
                   ),
                   const SizedBox(height: 5),
@@ -5073,7 +5550,7 @@ class ISPageState extends State<ISPage> {
                   Text(
                     "( " + cogs.toStringAsFixed(2) + " )",
                     style: TextStyle(
-                      color: Colors.red,
+                      color: Colors.grey,
                     ),
                   ),
                   const SizedBox(height: 5),
@@ -5092,7 +5569,7 @@ class ISPageState extends State<ISPage> {
             '    Expenses:',
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: Colors.red,
+              color: Colors.grey,
             ),
           ),
           Container(
@@ -5101,22 +5578,24 @@ class ISPageState extends State<ISPage> {
                 children: [
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Advertising",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
                   )),
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "$a",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
@@ -5135,22 +5614,24 @@ class ISPageState extends State<ISPage> {
                 children: [
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Business Vehicle(s) Repairs",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
                   )),
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "$a1",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
@@ -5169,22 +5650,24 @@ class ISPageState extends State<ISPage> {
                 children: [
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Employee Commissions",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
                   )),
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "$a2",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
@@ -5203,22 +5686,24 @@ class ISPageState extends State<ISPage> {
                 children: [
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Variable Employee Benefits",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
                   )),
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "$a3",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
@@ -5237,22 +5722,24 @@ class ISPageState extends State<ISPage> {
                 children: [
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Meals & Entertainment",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
                   )),
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "$a4",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
@@ -5271,22 +5758,24 @@ class ISPageState extends State<ISPage> {
                 children: [
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Office",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
                   )),
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "$a5",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
@@ -5305,22 +5794,24 @@ class ISPageState extends State<ISPage> {
                 children: [
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Professional Services",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
                   )),
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "$a6",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
@@ -5339,22 +5830,24 @@ class ISPageState extends State<ISPage> {
                 children: [
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Phone",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
                   )),
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "$a7",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
@@ -5373,22 +5866,24 @@ class ISPageState extends State<ISPage> {
                 children: [
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Travel",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
                   )),
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "$a8",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
@@ -5407,28 +5902,31 @@ class ISPageState extends State<ISPage> {
                 children: [
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Training and Education",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
                   )),
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "$a9",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
                   )),
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(''),
                     ],
@@ -5441,22 +5939,24 @@ class ISPageState extends State<ISPage> {
                 children: [
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Deliveries",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
                   )),
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "$a10",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
@@ -5475,22 +5975,24 @@ class ISPageState extends State<ISPage> {
                 children: [
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Loan & Interest Payments",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
                   )),
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "$a11",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
@@ -5509,22 +6011,24 @@ class ISPageState extends State<ISPage> {
                 children: [
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Other",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
                   )),
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "$a12",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
@@ -5543,22 +6047,24 @@ class ISPageState extends State<ISPage> {
                 children: [
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "Fixed Costs",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
                   )),
                   Expanded(
                       child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         "$fixedCosts",
                         style: TextStyle(
-                          color: Colors.red,
+                          color: Colors.grey,
                         ),
                       ),
                     ],
@@ -5574,11 +6080,12 @@ class ISPageState extends State<ISPage> {
           Row(children: [
             Expanded(
                 child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Total Expenses',
+                  '  Total Expenses',
                   style: TextStyle(
-                    color: Colors.red,
+                    color: Colors.grey,
                   ),
                 ),
               ],
@@ -5593,10 +6100,10 @@ class ISPageState extends State<ISPage> {
                 child: Column(
               children: [
                 Text(
-                  '( \$' + totalExpense.toStringAsFixed(2) + ' )',
+                  '( ' + totalExpense.toStringAsFixed(2) + ' )',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.red,
+                    color: Colors.grey,
                   ),
                 ),
               ],
@@ -5605,9 +6112,10 @@ class ISPageState extends State<ISPage> {
           Row(children: [
             Expanded(
                 child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Net Profit / Loss',
+                  '  Net Profit / Loss',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                   ),
@@ -5616,6 +6124,7 @@ class ISPageState extends State<ISPage> {
             )),
             Expanded(
                 child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(''),
               ],
@@ -5624,7 +6133,7 @@ class ISPageState extends State<ISPage> {
                 child: Column(
               children: [
                 Text(
-                  '\$' + profit.toStringAsFixed(2),
+                  '' + profit.toStringAsFixed(2),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                   ),
@@ -5659,7 +6168,7 @@ class ISPageState extends State<ISPage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.attach_money_sharp),
-            label: 'Funding',
+            label: 'Valuation',
           ),
         ],
         currentIndex: _selectedIndex,
@@ -5748,12 +6257,11 @@ class BSPageState extends State<BSPage> {
   late EmployeeDataSource employeeDataSource;
   late DatabaseReference dbRef;
 
-
   GlobalKey<FormState> _oFormKey1 = GlobalKey<FormState>();
   GlobalKey<FormState> _oFormKey2 = GlobalKey<FormState>();
   GlobalKey<FormState> _oFormKey3 = GlobalKey<FormState>();
 
-  String sme = '';
+  String sme = '', currency = '';
   String UserName = "";
   //String _initialValue;
   String _valueChangedfixedAssets = '',
@@ -5887,7 +6395,6 @@ class BSPageState extends State<BSPage> {
       'label': 'Kupfuma Equipment',
       'icon': Icon(Icons.landscape),
     },
-
   ];
   final List<Map<String, dynamic>> _currentLiabilities = [
     {
@@ -5961,17 +6468,17 @@ class BSPageState extends State<BSPage> {
       descFixedAssetController = TextEditingController(),
       cartFixedAssetController = TextEditingController();
 
-      final amountCurrentAssetController = TextEditingController(),
+  final amountCurrentAssetController = TextEditingController(),
       titleCurrentAssetController = TextEditingController(),
       descCurrentAssetController = TextEditingController(),
       cartCurrentAssetController = TextEditingController();
 
-      final amountLongtermLiabilityController = TextEditingController(),
+  final amountLongtermLiabilityController = TextEditingController(),
       titleLongtermLiabilityController = TextEditingController(),
       descLongtermLiabilityController = TextEditingController(),
       cartLongtermLiabilityController = TextEditingController();
 
-      final amountCurrentLiabilityController = TextEditingController(),
+  final amountCurrentLiabilityController = TextEditingController(),
       titleCurrentLiabilityController = TextEditingController(),
       descCurrentLiabilityController = TextEditingController(),
       cartCurrentLiabilityController = TextEditingController();
@@ -5980,15 +6487,23 @@ class BSPageState extends State<BSPage> {
   final commentController = TextEditingController();
   final planController = TextEditingController();
   double cogs = 0, gp = 0, fixedCosts = 0;
-  double profit = 0,equity=0,tot=0;
+  double profit = 0, equity = 0, tot = 0;
   double totalRevenue = 0;
 
   double totalExpense = 0;
-  void calculateProfit() async{
+  void calculateProfit() async {
     String uid = user?.uid ?? 'uid';
 
-
-
+    FirebaseDatabase.instance
+        .ref()
+        .child('net_position/' + uid + '/')
+        .onChildAdded
+        .listen((event) {
+      Map rev = event.snapshot.value as Map;
+      setState(() {
+        profit += double.parse(rev['amount']);
+      });
+    });
     String a = '0',
         a1 = '0',
         a2 = '0',
@@ -6004,14 +6519,13 @@ class BSPageState extends State<BSPage> {
         a12 = '0';
     FirebaseDatabase.instance
         .ref()
-        .child('trackFixedCosts/' + uid+'/'+actualMonthRef)
+        .child('trackFixedCosts/' + uid + '/' + actualMonthRef)
         .onChildAdded
         .listen((event) {
       Map revenue = event.snapshot.value as Map;
 
       setState(() {
         fixedCosts += double.parse(revenue['amount']);
-
       });
     });
     await Future.delayed(Duration(seconds: 1));
@@ -6023,7 +6537,6 @@ class BSPageState extends State<BSPage> {
       Map exp = event.snapshot.value as Map;
 
       setState(() {
-
         a = exp['Advertising'];
         a1 = exp['Business Vehicle(s) Repairs'];
         a2 = exp['Employee Commissions'];
@@ -6052,15 +6565,18 @@ class BSPageState extends State<BSPage> {
             double.parse(a11) +
             double.parse(a12);
 
-
         profit = totalRevenue - totalExpense - cogs;
       });
     });
-    FirebaseDatabase.instance.ref().child('Revenue' + '/' + uid).onChildAdded.listen((event) {
+    FirebaseDatabase.instance
+        .ref()
+        .child('Revenue' + '/' + uid)
+        .onChildAdded
+        .listen((event) {
       Map revenue = event.snapshot.value as Map;
       setState(() {
         cogs += (double.parse(revenue['amount']) *
-            (100 - double.parse(revenue['margin']))) /
+                (100 - double.parse(revenue['margin']))) /
             100;
         totalRevenue += double.parse(revenue['amount']);
         gp = totalRevenue - cogs;
@@ -6069,12 +6585,11 @@ class BSPageState extends State<BSPage> {
     });
     await Future.delayed(Duration(seconds: 1));
     setState(() {
-        profit = totalRevenue - totalExpense - cogs;
-
+      profit = totalRevenue - totalExpense - cogs;
     });
   }
 
-  Future<void> drawBalanceSheet() async{
+  Future<void> drawBalanceSheet() async {
     String uid = user?.uid ?? 'uid';
     calculateProfit();
     await Future.delayed(Duration(seconds: 1));
@@ -6086,7 +6601,10 @@ class BSPageState extends State<BSPage> {
       Map rev = event.snapshot.value as Map;
       setState(() {
         fixedAssets += double.parse(rev['amount']);
-
+        totalAssets = fixedAssets + currentAssets;
+        totalLiabilities = longTermLiabilities + currentLiabilities;
+        tot = totalAssets - totalLiabilities;
+        equity = totalAssets - totalLiabilities - profit;
       });
     });
     FirebaseDatabase.instance
@@ -6097,6 +6615,10 @@ class BSPageState extends State<BSPage> {
       Map rev = event.snapshot.value as Map;
       setState(() {
         currentLiabilities += double.parse(rev['amount']);
+        totalAssets = fixedAssets + currentAssets;
+        totalLiabilities = longTermLiabilities + currentLiabilities;
+        tot = totalAssets - totalLiabilities;
+        equity = totalAssets - totalLiabilities - profit;
       });
     });
     FirebaseDatabase.instance
@@ -6107,10 +6629,10 @@ class BSPageState extends State<BSPage> {
       Map rev = event.snapshot.value as Map;
       setState(() {
         currentAssets += double.parse(rev['amount']);
-        totalAssets=fixedAssets+currentAssets;
-        totalLiabilities=longTermLiabilities+currentLiabilities;
-        tot=totalAssets+totalLiabilities;
-        equity=totalAssets+totalLiabilities-profit;
+        totalAssets = fixedAssets + currentAssets;
+        totalLiabilities = longTermLiabilities + currentLiabilities;
+        tot = totalAssets - totalLiabilities;
+        equity = totalAssets - totalLiabilities - profit;
       });
     });
     FirebaseDatabase.instance
@@ -6121,23 +6643,20 @@ class BSPageState extends State<BSPage> {
       Map rev = event.snapshot.value as Map;
       setState(() {
         longTermLiabilities += double.parse(rev['amount']);
-        totalAssets=fixedAssets+currentAssets;
-        totalLiabilities=longTermLiabilities+currentLiabilities;
-        tot=totalAssets+totalLiabilities;
-        equity=totalAssets+totalLiabilities-profit;
+        totalAssets = fixedAssets + currentAssets;
+        totalLiabilities = longTermLiabilities + currentLiabilities;
+        tot = totalAssets - totalLiabilities;
+        equity = totalAssets - totalLiabilities - profit;
       });
     });
 
     await Future.delayed(Duration(seconds: 1));
-
-
-
-
   }
+
   @override
   void initState() {
     super.initState();
-      drawBalanceSheet();
+    drawBalanceSheet();
     String uid = user?.uid ?? 'uid'; // <-- Their email
     dbRef = FirebaseDatabase.instance.ref().child('balanceSheet' + '/' + uid);
 
@@ -6147,15 +6666,15 @@ class BSPageState extends State<BSPage> {
       if (user['email'] == mail) {
         setState(() {
           sme = user['sme'];
+          currency = user['currency'];
           UserName = user['fname'];
         });
-
-
       }
     });
     employees = getEmployeeData2();
     employeeDataSource = EmployeeDataSource(employeeData: employees);
   }
+
   int _selectedIndex = 2;
   // Check if the user is signed in
   void _onItemTapped(int index) {
@@ -6164,7 +6683,7 @@ class BSPageState extends State<BSPage> {
     });
     switch (index) {
       case 0:
-      // only scroll to top when current index is selected.
+        // only scroll to top when current index is selected.
         Navigator.push(
             context, MaterialPageRoute(builder: (context) => SignIn()));
         break;
@@ -6190,6 +6709,7 @@ class BSPageState extends State<BSPage> {
                     children: [
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -6200,8 +6720,12 @@ class BSPageState extends State<BSPage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('Income Statement')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -6212,18 +6736,41 @@ class BSPageState extends State<BSPage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('     Balance Sheet   ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                              MaterialPageRoute(
+                                  builder: (context) => FundingPage()),
                             ); // Navigate back to first route when tapped.
                           },
-                          child: Text('     $threeQuarterTurn Business Advisory   ')),
+                          child: Text('     Funding  ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text(
+                              '     $threeQuarterTurn Business Advisory   ')),
                     ],
                   ),
                   const SizedBox(height: 15),
@@ -6239,11 +6786,17 @@ class BSPageState extends State<BSPage> {
         break;
       case 4:
         Navigator.push(
-            context, MaterialPageRoute(builder: (context) => FundingPage()));
+            context, MaterialPageRoute(builder: (context) => ValuationPage()));
         break;
     }
   }
-  double fixedAssets=0,currentAssets=0,currentLiabilities=0,longTermLiabilities=0,totalAssets=0,totalLiabilities=0;
+
+  double fixedAssets = 0,
+      currentAssets = 0,
+      currentLiabilities = 0,
+      longTermLiabilities = 0,
+      totalAssets = 0,
+      totalLiabilities = 0;
 
   void getFixedAssetsData() async {
     String uid = user?.uid ?? 'uid';
@@ -6260,107 +6813,108 @@ class BSPageState extends State<BSPage> {
               textAlign: TextAlign.center,
             ),
             content: SingleChildScrollView(
-              child:Form(
+              child: Form(
                 key: _oFormKey0,
-                child:ListBody(
-                children: <Widget>[
-                  SelectFormField(
-                    type: SelectFormFieldType.dialog,
-                    controller: cartFixedAssetController,
-                    //initialValue: _initialValue,
-                    icon: Icon(Icons.format_shapes),
-                    labelText: 'Select Category',
-                    changeIcon: true,
-                    dialogTitle: 'Fixed Asset Category',
-                    dialogCancelBtn: 'CANCEL',
-                    enableSearch: true,
-                    dialogSearchHint: 'Search',
-                    items: _fixedAssets,
-                    onChanged: (val) =>
-                        setState(() => _valueChangedfixedAssets = val),
-                    validator: (val) {
-                      setState(() => _valueToValidatefixedAssets = val ?? '');
-                      return null;
-                    },
-                    onSaved: (val) =>
-                        setState(() => _valueSavedfixedAssets = val ?? ''),
-                  ),
-                  TextFormField(
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Field Required';
-                      }
-                      return null;
-                    },
-                    controller: titleFixedAssetController,
-                    keyboardType: TextInputType.text,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Title',
-                      hintText: 'Enter Title',
+                child: ListBody(
+                  children: <Widget>[
+                    SelectFormField(
+                      type: SelectFormFieldType.dialog,
+                      controller: cartFixedAssetController,
+                      //initialValue: _initialValue,
+                      icon: Icon(Icons.format_shapes),
+                      labelText: 'Select Category',
+                      changeIcon: true,
+                      dialogTitle: 'Fixed Asset Category',
+                      dialogCancelBtn: 'CANCEL',
+                      enableSearch: true,
+                      dialogSearchHint: 'Search',
+                      items: _fixedAssets,
+                      onChanged: (val) =>
+                          setState(() => _valueChangedfixedAssets = val),
+                      validator: (val) {
+                        setState(() => _valueToValidatefixedAssets = val ?? '');
+                        return null;
+                      },
+                      onSaved: (val) =>
+                          setState(() => _valueSavedfixedAssets = val ?? ''),
                     ),
-                  ),
-                  const SizedBox(height: 15),
-                  TextFormField(
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Field Required';
-                      }
-                      return null;
-                    },
-                    controller: descFixedAssetController,
-                    keyboardType: TextInputType.text,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Description',
-                      hintText: 'Enter Description',
+                    TextFormField(
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Field Required';
+                        }
+                        return null;
+                      },
+                      controller: titleFixedAssetController,
+                      keyboardType: TextInputType.text,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Title',
+                        hintText: 'Enter Title',
+                      ),
                     ),
-                  ),
-                  // const SizedBox(height: 15),
-                  // TextField(
-                  //   controller: revenueTargetController,
-                  //   keyboardType: TextInputType.number,
-                  //   decoration: const InputDecoration(
-                  //     border: OutlineInputBorder(),
-                  //     labelText: 'Revenue Target ',
-                  //     hintText: 'Enter Revenue Target',
-                  //   ),
-                  // ),
-                  const SizedBox(height: 15),
-                  TextFormField(
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Field Required';
-                      }
-                      return null;
-                    },
-                    controller: amountFixedAssetController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Value',
-                      hintText: 'Enter Value',
+                    const SizedBox(height: 15),
+                    TextFormField(
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Field Required';
+                        }
+                        return null;
+                      },
+                      controller: descFixedAssetController,
+                      keyboardType: TextInputType.text,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Description',
+                        hintText: 'Enter Description',
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 15),
-                ],
-              ),),
+                    // const SizedBox(height: 15),
+                    // TextField(
+                    //   controller: revenueTargetController,
+                    //   keyboardType: TextInputType.number,
+                    //   decoration: const InputDecoration(
+                    //     border: OutlineInputBorder(),
+                    //     labelText: 'Revenue Target ',
+                    //     hintText: 'Enter Revenue Target',
+                    //   ),
+                    // ),
+                    const SizedBox(height: 15),
+                    TextFormField(
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Field Required';
+                        }
+                        return null;
+                      },
+                      controller: amountFixedAssetController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Value',
+                        hintText: 'Enter Value',
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                  ],
+                ),
+              ),
             ),
             actions: <Widget>[
               TextButton(
                 child: const Text('Save'),
                 onPressed: () {
-          if (_oFormKey0.currentState!.validate()) {
-            Map<String, String> revenue = {
-              'amount': amountFixedAssetController.text,
-              'description': descFixedAssetController.text,
-              'cartegory': cartFixedAssetController.text,
-              'title': titleFixedAssetController.text
-            };
+                  if (_oFormKey0.currentState!.validate()) {
+                    Map<String, String> revenue = {
+                      'amount': amountFixedAssetController.text,
+                      'description': descFixedAssetController.text,
+                      'cartegory': cartFixedAssetController.text,
+                      'title': titleFixedAssetController.text
+                    };
 
-            dbRef.child('fixedAssets').push().set(revenue);
-            Navigator.of(context).pop();
-          }
+                    dbRef.child('fixedAssets').push().set(revenue);
+                    Navigator.of(context).pop();
+                  }
                 },
               ),
             ],
@@ -6369,14 +6923,13 @@ class BSPageState extends State<BSPage> {
       );
     }
 
-
-      _showMyDialog();
+    _showMyDialog();
   }
+
   void getCurrentAssetsData() async {
     String uid = user?.uid ?? 'uid';
 
     Future<void> _showMyDialog() async {
-
       return showDialog<void>(
         context: context,
         barrierDismissible: false, // user must tap button!
@@ -6387,107 +6940,109 @@ class BSPageState extends State<BSPage> {
               textAlign: TextAlign.center,
             ),
             content: SingleChildScrollView(
-              child:Form(
-                key: _oFormKey1,child: ListBody(
-                children: <Widget>[
-                  SelectFormField(
-
-                    type: SelectFormFieldType.dialog,
-                    controller: cartCurrentAssetController,
-                    //initialValue: _initialValue,
-                    icon: Icon(Icons.format_shapes),
-                    labelText: 'Select Category',
-                    changeIcon: true,
-                    dialogTitle: 'Current Asset Category',
-                    dialogCancelBtn: 'CANCEL',
-                    enableSearch: true,
-                    dialogSearchHint: 'Search',
-                    items: _currentAssets,
-                    onChanged: (val) =>
-                        setState(() => _valueChangedcurrentAssets = val),
-                    validator: (val) {
-                      setState(() => _valueToValidatecurrentAssets = val ?? '');
-                      return null;
-                    },
-                    onSaved: (val) =>
-                        setState(() => _valueSavedcurrentAssets = val ?? ''),
-                  ),
-                  TextFormField(
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Field Required';
-                      }
-                      return null;
-                    },
-                    controller: titleCurrentAssetController,
-                    keyboardType: TextInputType.text,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Title',
-                      hintText: 'Enter Title',
+              child: Form(
+                key: _oFormKey1,
+                child: ListBody(
+                  children: <Widget>[
+                    SelectFormField(
+                      type: SelectFormFieldType.dialog,
+                      controller: cartCurrentAssetController,
+                      //initialValue: _initialValue,
+                      icon: Icon(Icons.format_shapes),
+                      labelText: 'Select Category',
+                      changeIcon: true,
+                      dialogTitle: 'Current Asset Category',
+                      dialogCancelBtn: 'CANCEL',
+                      enableSearch: true,
+                      dialogSearchHint: 'Search',
+                      items: _currentAssets,
+                      onChanged: (val) =>
+                          setState(() => _valueChangedcurrentAssets = val),
+                      validator: (val) {
+                        setState(
+                            () => _valueToValidatecurrentAssets = val ?? '');
+                        return null;
+                      },
+                      onSaved: (val) =>
+                          setState(() => _valueSavedcurrentAssets = val ?? ''),
                     ),
-                  ),
-                  const SizedBox(height: 15),
-                  TextFormField(
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Field Required';
-                      }
-                      return null;
-                    },
-                    controller: descCurrentAssetController,
-                    keyboardType: TextInputType.text,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Description',
-                      hintText: 'Enter Description',
+                    TextFormField(
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Field Required';
+                        }
+                        return null;
+                      },
+                      controller: titleCurrentAssetController,
+                      keyboardType: TextInputType.text,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Title',
+                        hintText: 'Enter Title',
+                      ),
                     ),
-                  ),
-                  // const SizedBox(height: 15),
-                  // TextField(
-                  //   controller: revenueTargetController,
-                  //   keyboardType: TextInputType.number,
-                  //   decoration: const InputDecoration(
-                  //     border: OutlineInputBorder(),
-                  //     labelText: 'Revenue Target ',
-                  //     hintText: 'Enter Revenue Target',
-                  //   ),
-                  // ),
-                  const SizedBox(height: 15),
-                  TextFormField(
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Field Required';
-                      }
-                      return null;
-                    },
-                    controller: amountCurrentAssetController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Value',
-                      hintText: 'Enter Value',
+                    const SizedBox(height: 15),
+                    TextFormField(
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Field Required';
+                        }
+                        return null;
+                      },
+                      controller: descCurrentAssetController,
+                      keyboardType: TextInputType.text,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Description',
+                        hintText: 'Enter Description',
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 15),
-                ],
-              ),),
+                    // const SizedBox(height: 15),
+                    // TextField(
+                    //   controller: revenueTargetController,
+                    //   keyboardType: TextInputType.number,
+                    //   decoration: const InputDecoration(
+                    //     border: OutlineInputBorder(),
+                    //     labelText: 'Revenue Target ',
+                    //     hintText: 'Enter Revenue Target',
+                    //   ),
+                    // ),
+                    const SizedBox(height: 15),
+                    TextFormField(
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Field Required';
+                        }
+                        return null;
+                      },
+                      controller: amountCurrentAssetController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Value',
+                        hintText: 'Enter Value',
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                  ],
+                ),
+              ),
             ),
             actions: <Widget>[
               TextButton(
                 child: const Text('Save'),
                 onPressed: () {
-          if (_oFormKey1.currentState!.validate()) {
-            Map<String, String> revenue = {
-              'amount': amountCurrentAssetController.text,
-              'description': descCurrentAssetController.text,
-              'cartegory': cartCurrentAssetController.text,
-              'title': titleCurrentAssetController.text
-            };
+                  if (_oFormKey1.currentState!.validate()) {
+                    Map<String, String> revenue = {
+                      'amount': amountCurrentAssetController.text,
+                      'description': descCurrentAssetController.text,
+                      'cartegory': cartCurrentAssetController.text,
+                      'title': titleCurrentAssetController.text
+                    };
 
-            dbRef.child('currentAssets').push().set(revenue);
-            Navigator.of(context).pop();
-          }
+                    dbRef.child('currentAssets').push().set(revenue);
+                    Navigator.of(context).pop();
+                  }
                 },
               ),
             ],
@@ -6496,14 +7051,14 @@ class BSPageState extends State<BSPage> {
       );
     }
 
-
     _showMyDialog();
   }
+
   void getCurrentLiabilitiesData() async {
     String uid = user?.uid ?? 'uid';
 
     Future<void> _showMyDialog() async {
-    //  await Future.delayed(Duration(seconds: 2));
+      //  await Future.delayed(Duration(seconds: 2));
       return showDialog<void>(
         context: context,
         barrierDismissible: false, // user must tap button!
@@ -6514,106 +7069,109 @@ class BSPageState extends State<BSPage> {
               textAlign: TextAlign.center,
             ),
             content: SingleChildScrollView(
-              child:Form(
-                key: _oFormKey2,child: ListBody(
-                children: <Widget>[
-                  SelectFormField(
-                    type: SelectFormFieldType.dialog,
-                    controller: cartCurrentLiabilityController,
-                    //initialValue: _initialValue,
-                    icon: Icon(Icons.format_shapes),
-                    labelText: 'Select Category',
-                    changeIcon: true,
-                    dialogTitle: 'Current Liability Category',
-                    dialogCancelBtn: 'CANCEL',
-                    enableSearch: true,
-                    dialogSearchHint: 'Search',
-                    items: _currentLiabilities,
-                    onChanged: (val) =>
-                        setState(() => _valueChangedcurrentLiabilities = val),
-                    validator: (val) {
-                      setState(() => _valueToValidatecurrentLiabilities = val ?? '');
-                      return null;
-                    },
-                    onSaved: (val) =>
-                        setState(() => _valueSavedcurrentLiabilities = val ?? ''),
-                  ),
-                  TextFormField(
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Field Required';
-                      }
-                      return null;
-                    },
-                    controller: titleCurrentLiabilityController,
-                    keyboardType: TextInputType.text,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Title',
-                      hintText: 'Enter Title',
+              child: Form(
+                key: _oFormKey2,
+                child: ListBody(
+                  children: <Widget>[
+                    SelectFormField(
+                      type: SelectFormFieldType.dialog,
+                      controller: cartCurrentLiabilityController,
+                      //initialValue: _initialValue,
+                      icon: Icon(Icons.format_shapes),
+                      labelText: 'Select Category',
+                      changeIcon: true,
+                      dialogTitle: 'Current Liability Category',
+                      dialogCancelBtn: 'CANCEL',
+                      enableSearch: true,
+                      dialogSearchHint: 'Search',
+                      items: _currentLiabilities,
+                      onChanged: (val) =>
+                          setState(() => _valueChangedcurrentLiabilities = val),
+                      validator: (val) {
+                        setState(() =>
+                            _valueToValidatecurrentLiabilities = val ?? '');
+                        return null;
+                      },
+                      onSaved: (val) => setState(
+                          () => _valueSavedcurrentLiabilities = val ?? ''),
                     ),
-                  ),
-                  const SizedBox(height: 15),
-                  TextFormField(
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Field Required';
-                      }
-                      return null;
-                    },
-                    controller: descCurrentLiabilityController,
-                    keyboardType: TextInputType.text,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Description',
-                      hintText: 'Enter Description',
+                    TextFormField(
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Field Required';
+                        }
+                        return null;
+                      },
+                      controller: titleCurrentLiabilityController,
+                      keyboardType: TextInputType.text,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Title',
+                        hintText: 'Enter Title',
+                      ),
                     ),
-                  ),
-                  // const SizedBox(height: 15),
-                  // TextField(
-                  //   controller: revenueTargetController,
-                  //   keyboardType: TextInputType.number,
-                  //   decoration: const InputDecoration(
-                  //     border: OutlineInputBorder(),
-                  //     labelText: 'Revenue Target ',
-                  //     hintText: 'Enter Revenue Target',
-                  //   ),
-                  // ),
-                  const SizedBox(height: 15),
-                  TextFormField(
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Field Required';
-                      }
-                      return null;
-                    },
-                    controller: amountCurrentLiabilityController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Value',
-                      hintText: 'Enter Value',
+                    const SizedBox(height: 15),
+                    TextFormField(
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Field Required';
+                        }
+                        return null;
+                      },
+                      controller: descCurrentLiabilityController,
+                      keyboardType: TextInputType.text,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Description',
+                        hintText: 'Enter Description',
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 15),
-                ],
-              ),),
+                    // const SizedBox(height: 15),
+                    // TextField(
+                    //   controller: revenueTargetController,
+                    //   keyboardType: TextInputType.number,
+                    //   decoration: const InputDecoration(
+                    //     border: OutlineInputBorder(),
+                    //     labelText: 'Revenue Target ',
+                    //     hintText: 'Enter Revenue Target',
+                    //   ),
+                    // ),
+                    const SizedBox(height: 15),
+                    TextFormField(
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Field Required';
+                        }
+                        return null;
+                      },
+                      controller: amountCurrentLiabilityController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Value',
+                        hintText: 'Enter Value',
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                  ],
+                ),
+              ),
             ),
             actions: <Widget>[
               TextButton(
                 child: const Text('Save'),
                 onPressed: () {
-          if (_oFormKey2.currentState!.validate()) {
-            Map<String, String> revenue = {
-              'amount': amountCurrentLiabilityController.text,
-              'description': descCurrentLiabilityController.text,
-              'cartegory': cartCurrentLiabilityController.text,
-              'title': titleCurrentLiabilityController.text
-            };
+                  if (_oFormKey2.currentState!.validate()) {
+                    Map<String, String> revenue = {
+                      'amount': amountCurrentLiabilityController.text,
+                      'description': descCurrentLiabilityController.text,
+                      'cartegory': cartCurrentLiabilityController.text,
+                      'title': titleCurrentLiabilityController.text
+                    };
 
-            dbRef.child('currentLiability').push().set(revenue);
-            Navigator.of(context).pop();
-          }
+                    dbRef.child('currentLiability').push().set(revenue);
+                    Navigator.of(context).pop();
+                  }
                 },
               ),
             ],
@@ -6622,14 +7180,14 @@ class BSPageState extends State<BSPage> {
       );
     }
 
-
     _showMyDialog();
   }
+
   void getLongtermLiabilitiesData() async {
     String uid = user?.uid ?? 'uid';
 
     Future<void> _showMyDialog() async {
-     // await Future.delayed(Duration(seconds: 2));
+      // await Future.delayed(Duration(seconds: 2));
       return showDialog<void>(
         context: context,
         barrierDismissible: false, // user must tap button!
@@ -6640,106 +7198,109 @@ class BSPageState extends State<BSPage> {
               textAlign: TextAlign.center,
             ),
             content: SingleChildScrollView(
-              child:Form(
-                key: _oFormKey3,child: ListBody(
-                children: <Widget>[
-                  SelectFormField(
-                    type: SelectFormFieldType.dialog,
-                    controller: cartLongtermLiabilityController,
-                    //initialValue: _initialValue,
-                    icon: Icon(Icons.format_shapes),
-                    labelText: 'Select Category',
-                    changeIcon: true,
-                    dialogTitle: 'Longterm Liability Category',
-                    dialogCancelBtn: 'CANCEL',
-                    enableSearch: true,
-                    dialogSearchHint: 'Search',
-                    items: _longTermLiabilities,
-                    onChanged: (val) =>
-                        setState(() => _valueChangedlongTermLiabilities = val),
-                    validator: (val) {
-                      setState(() => _valueToValidatelongTermLiabilities = val ?? '');
-                      return null;
-                    },
-                    onSaved: (val) =>
-                        setState(() => _valueSavedlongTermLiabilities = val ?? ''),
-                  ),
-                  TextFormField(
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Field Required';
-                      }
-                      return null;
-                    },
-                    controller: titleLongtermLiabilityController,
-                    keyboardType: TextInputType.text,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Title',
-                      hintText: 'Enter Title',
+              child: Form(
+                key: _oFormKey3,
+                child: ListBody(
+                  children: <Widget>[
+                    SelectFormField(
+                      type: SelectFormFieldType.dialog,
+                      controller: cartLongtermLiabilityController,
+                      //initialValue: _initialValue,
+                      icon: Icon(Icons.format_shapes),
+                      labelText: 'Select Category',
+                      changeIcon: true,
+                      dialogTitle: 'Longterm Liability Category',
+                      dialogCancelBtn: 'CANCEL',
+                      enableSearch: true,
+                      dialogSearchHint: 'Search',
+                      items: _longTermLiabilities,
+                      onChanged: (val) => setState(
+                          () => _valueChangedlongTermLiabilities = val),
+                      validator: (val) {
+                        setState(() =>
+                            _valueToValidatelongTermLiabilities = val ?? '');
+                        return null;
+                      },
+                      onSaved: (val) => setState(
+                          () => _valueSavedlongTermLiabilities = val ?? ''),
                     ),
-                  ),
-                  const SizedBox(height: 15),
-                  TextFormField(
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Field Required';
-                      }
-                      return null;
-                    },
-                    controller: descLongtermLiabilityController,
-                    keyboardType: TextInputType.text,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Description',
-                      hintText: 'Enter Description',
+                    TextFormField(
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Field Required';
+                        }
+                        return null;
+                      },
+                      controller: titleLongtermLiabilityController,
+                      keyboardType: TextInputType.text,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Title',
+                        hintText: 'Enter Title',
+                      ),
                     ),
-                  ),
-                  // const SizedBox(height: 15),
-                  // TextField(
-                  //   controller: revenueTargetController,
-                  //   keyboardType: TextInputType.number,
-                  //   decoration: const InputDecoration(
-                  //     border: OutlineInputBorder(),
-                  //     labelText: 'Revenue Target ',
-                  //     hintText: 'Enter Revenue Target',
-                  //   ),
-                  // ),
-                  const SizedBox(height: 15),
-                  TextFormField(
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Field Required';
-                      }
-                      return null;
-                    },
-                    controller: amountLongtermLiabilityController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Value',
-                      hintText: 'Enter Value',
+                    const SizedBox(height: 15),
+                    TextFormField(
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Field Required';
+                        }
+                        return null;
+                      },
+                      controller: descLongtermLiabilityController,
+                      keyboardType: TextInputType.text,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Description',
+                        hintText: 'Enter Description',
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 15),
-                ],
-              ),),
+                    // const SizedBox(height: 15),
+                    // TextField(
+                    //   controller: revenueTargetController,
+                    //   keyboardType: TextInputType.number,
+                    //   decoration: const InputDecoration(
+                    //     border: OutlineInputBorder(),
+                    //     labelText: 'Revenue Target ',
+                    //     hintText: 'Enter Revenue Target',
+                    //   ),
+                    // ),
+                    const SizedBox(height: 15),
+                    TextFormField(
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Field Required';
+                        }
+                        return null;
+                      },
+                      controller: amountLongtermLiabilityController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Value',
+                        hintText: 'Enter Value',
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                  ],
+                ),
+              ),
             ),
             actions: <Widget>[
               TextButton(
                 child: const Text('Save'),
                 onPressed: () {
-          if (_oFormKey3.currentState!.validate()) {
-            Map<String, String> revenue = {
-              'amount': amountLongtermLiabilityController.text,
-              'description': descLongtermLiabilityController.text,
-              'cartegory': cartLongtermLiabilityController.text,
-              'title': titleLongtermLiabilityController.text
-            };
+                  if (_oFormKey3.currentState!.validate()) {
+                    Map<String, String> revenue = {
+                      'amount': amountLongtermLiabilityController.text,
+                      'description': descLongtermLiabilityController.text,
+                      'cartegory': cartLongtermLiabilityController.text,
+                      'title': titleLongtermLiabilityController.text
+                    };
 
-            dbRef.child('longtermLiability').push().set(revenue);
-            Navigator.of(context).pop();
-          }
+                    dbRef.child('longtermLiability').push().set(revenue);
+                    Navigator.of(context).pop();
+                  }
                 },
               ),
             ],
@@ -6748,46 +7309,39 @@ class BSPageState extends State<BSPage> {
       );
     }
 
-
     _showMyDialog();
   }
 
-  Widget balanceSheetRow(desc,desc2,value3,font1,font2,bcl){
+  Widget balanceSheetRow(desc, desc2, value3, font1, font2, bcl) {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        border: Border.all(width: 1.0, color: Colors.white),
-     color: bcl),
+          border: Border.all(width: 1.0, color: Colors.white), color: bcl),
       child: Row(
         children: [
           Expanded(
-
-            child: Text(desc,
-              textAlign: TextAlign.start,
-              style:TextStyle(
-                fontWeight: font1,
-
-              )
-            )
-          ),
-           Text(desc2,
+              child: Text(desc,
+                  textAlign: TextAlign.start,
+                  style: TextStyle(
+                    fontWeight: font1,
+                  ))),
+          Text(desc2,
               textAlign: TextAlign.center,
-                style:TextStyle(
-                  fontWeight: FontWeight.normal,
-                )
-            ),
+              style: TextStyle(
+                fontWeight: FontWeight.normal,
+              )),
           Expanded(
             child: Text(value3,
-              textAlign: TextAlign.end,
-                style:TextStyle(
+                textAlign: TextAlign.end,
+                style: TextStyle(
                   fontWeight: font2,
-                )
-            ),
+                )),
           ),
         ],
       ),
     );
   }
+
   @override
   Widget build(BuildContext context) {
     Color insightColor2 = Colors.blue;
@@ -6806,8 +7360,8 @@ class BSPageState extends State<BSPage> {
                 ),
               ),
             ),
-            const Text(
-              'Zimbabwe USD',
+            Text(
+              '$currency',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
@@ -6864,205 +7418,249 @@ class BSPageState extends State<BSPage> {
         automaticallyImplyLeading: false,
       ),
       body: ListView(
-          children: <Widget> [
-            Container(
-              padding: const EdgeInsets.all(10),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      color: Colors.grey,
-                      child: Column(
-                        children: [
-                          const Text('\nTotal Assets'),
-                           Text("\$$totalAssets"),
-                          const Text('\n  '),
-                        ],
-                      ),
+        children: <Widget>[
+          Container(
+            padding: const EdgeInsets.all(10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    color: Colors.grey,
+                    child: Column(
+                      children: [
+                        const Text('\nTotal Assets'),
+                        Text("$totalAssets"),
+                        const Text('\n  '),
+                      ],
                     ),
                   ),
-                  Expanded(
-                    child: Container(
-                      color: Colors.blueGrey,
-                      child: Column(
-                        children: [
-                          const Text('\nTotal Liabilities'),
-                           Text("\$$totalLiabilities"),
-                          const Text('\n  '),
-                        ],
-                      ),
+                ),
+                Expanded(
+                  child: Container(
+                    color: Colors.blueGrey,
+                    child: Column(
+                      children: [
+                        const Text('\nTotal Liabilities'),
+                        Text("$totalLiabilities"),
+                        const Text('\n  '),
+                      ],
                     ),
                   ),
-                  Expanded(
-                    child: Container(
-                      color: Colors.grey,
-                      child: Column(
-                        children: [
-                          const Text('\n Equity'),
-                          Text("\$"+equity.toStringAsFixed(2)),
-                          const Text('\n '),
-                        ],
-                      ),
+                ),
+                Expanded(
+                  child: Container(
+                    color: Colors.grey,
+                    child: Column(
+                      children: [
+                        const Text('\n Equity'),
+                        Text("" + equity.toStringAsFixed(2)),
+                        const Text('\n '),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Container(
-              padding: const EdgeInsets.all(10),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                        style: TextButton.styleFrom(
-                          onSurface: Colors.white,
-                          backgroundColor: Colors.blue,
-                        ),
-                        onPressed: () {
-                          getFixedAssetsData(); // Navigate back to first route when tapped.
-                        },
-                        child: const Text(
-                          '\n+\n\nFixed Asset\n',
-                          textAlign: TextAlign.center,
-                        )),
-                  ),
-                  Expanded(
-                    child: ElevatedButton(
-                        style: TextButton.styleFrom(
-                          onSurface: Colors.white,
-                          backgroundColor: Colors.lightBlue,
-                        ),
-                        onPressed: () {
-                          getCurrentAssetsData(); // Navigate back to first route when tapped.
-                        },
-                        child: const Text(
-                          '\n+\n\nCurrent Asset\n',
-                          textAlign: TextAlign.center,
-                        )),
-                  ),
-                ],
-              ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                      style: TextButton.styleFrom(
+                        onSurface: Colors.white,
+                        backgroundColor: Colors.blue,
+                      ),
+                      onPressed: () {
+                        getFixedAssetsData(); // Navigate back to first route when tapped.
+                      },
+                      child: const Text(
+                        '\n+\n\nFixed Asset\n',
+                        textAlign: TextAlign.center,
+                      )),
+                ),
+                Expanded(
+                  child: ElevatedButton(
+                      style: TextButton.styleFrom(
+                        onSurface: Colors.white,
+                        backgroundColor: Colors.lightBlue,
+                      ),
+                      onPressed: () {
+                        getCurrentAssetsData(); // Navigate back to first route when tapped.
+                      },
+                      child: const Text(
+                        '\n+\n\nCurrent Asset\n',
+                        textAlign: TextAlign.center,
+                      )),
+                ),
+              ],
             ),
-            Container(
-              padding: const EdgeInsets.all(10),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                        style: TextButton.styleFrom(
-                          onSurface: Colors.white,
-                          backgroundColor: Colors.orange,
-                        ),
-                        onPressed: () {
-
-                          getLongtermLiabilitiesData(); // Navigate back to first route when tapped.
-                        },
-                        child: const Text(
-                          '\n+\n\nLong Term Liability\n',
-                          textAlign: TextAlign.center,
-                        )),
-                  ),
-                  Expanded(
-                    child: ElevatedButton(
-                        style: TextButton.styleFrom(
-                          onSurface: Colors.white,
-                          backgroundColor: Colors.orangeAccent,
-                        ),
-                        onPressed: () {
-
-                          getCurrentLiabilitiesData(); // Navigate back to first route when tapped.
-                        },
-                        child: const Text(
-                          '\n+\n\nCurrent Liability\n',
-                          textAlign: TextAlign.center,
-                        )),
-                  ),
-                ],
-              ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                      style: TextButton.styleFrom(
+                        onSurface: Colors.white,
+                        backgroundColor: Colors.orange,
+                      ),
+                      onPressed: () {
+                        getLongtermLiabilitiesData(); // Navigate back to first route when tapped.
+                      },
+                      child: const Text(
+                        '\n+\n\nLong Term Liability\n',
+                        textAlign: TextAlign.center,
+                      )),
+                ),
+                Expanded(
+                  child: ElevatedButton(
+                      style: TextButton.styleFrom(
+                        onSurface: Colors.white,
+                        backgroundColor: Colors.orangeAccent,
+                      ),
+                      onPressed: () {
+                        getCurrentLiabilitiesData(); // Navigate back to first route when tapped.
+                      },
+                      child: const Text(
+                        '\n+\n\nCurrent Liability\n',
+                        textAlign: TextAlign.center,
+                      )),
+                ),
+              ],
             ),
-            const SizedBox(height:20),
-            Container(
-              padding: const EdgeInsets.only(left: 10, right: 10),
-              color: Colors.blue,
-              child: Column(
-                children: [
-                  Text(""),
-                  Text('$sme: Balance Sheet'),
-                  Text(""),
-                ],
-              ),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.only(left: 10, right: 10),
+            color: Colors.blue,
+            child: Column(
+              children: [
+                Text(""),
+                Text('$sme: Balance Sheet'),
+                Text(""),
+              ],
             ),
-            const SizedBox(height:10),
-            //balancesheet rows start
-            balanceSheetRow("Assets","","",FontWeight.bold,FontWeight.bold,Colors.grey),
-              GestureDetector(
-                onTap: () {
-                Navigator.push(
-                context,
-                MaterialPageRoute(
-                builder: (context) => AssetsRoute(
-                ky: "1",
-                comment: "Fixed Assets",
-                ),)
-                  );
-                // Add what you want to do on tap
-                },
-                child:
-            balanceSheetRow("Fixed Assets","",fixedAssets.toStringAsFixed(2),FontWeight.normal,FontWeight.normal,Colors.lightBlueAccent),),
-            GestureDetector(
+          ),
+          const SizedBox(height: 10),
+          //balancesheet rows start
+          balanceSheetRow(
+              "Assets", "", "", FontWeight.bold, FontWeight.bold, Colors.grey),
+          GestureDetector(
             onTap: () {
-            Navigator.push(
-            context,
-            MaterialPageRoute(
-            builder: (context) => AssetsRoute(
-            ky: "2",
-            comment: "Current Assets",
-            ),)
-            );
-            // Add what you want to do on tap
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AssetsRoute(
+                      ky: "1",
+                      comment: "Fixed Assets",
+                    ),
+                  ));
+              // Add what you want to do on tap
             },
-            child:
-            balanceSheetRow("Current Assets","",currentAssets.toStringAsFixed(2),FontWeight.normal,FontWeight.normal,Colors.grey),),
-            balanceSheetRow("Total Assets","",totalAssets.toStringAsFixed(2),FontWeight.bold,FontWeight.bold,Colors.lightBlueAccent),
-            balanceSheetRow("","","",FontWeight.normal,FontWeight.normal,Colors.grey),
-            balanceSheetRow("Liabilities","","",FontWeight.bold,FontWeight.bold,Colors.lightBlueAccent),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AssetsRoute(
-                        ky: "3",
-                        comment: "Current Liabilities",
-                      ),)
-                );
-                // Add what you want to do on tap
-              },
-              child:balanceSheetRow("Current Liabilities","",currentLiabilities.toStringAsFixed(2),FontWeight.normal,FontWeight.normal,Colors.grey),),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AssetsRoute(
-                        ky: "4",
-                        comment: "Long Term Liabilities",
-                      ),)
-                );
-                // Add what you want to do on tap
-              },
-              child:balanceSheetRow("Long Term Liabilities","",longTermLiabilities.toStringAsFixed(2),FontWeight.normal,FontWeight.normal,Colors.lightBlueAccent),),
-            balanceSheetRow("Total Liabilities","",totalLiabilities.toStringAsFixed(2),FontWeight.bold,FontWeight.bold,Colors.grey),
-            balanceSheetRow("","","",FontWeight.normal,FontWeight.normal,Colors.lightBlueAccent),
-            balanceSheetRow("Owners Equity","","",FontWeight.bold,FontWeight.normal,Colors.grey),
-            balanceSheetRow("Contributed Capital","",equity.toStringAsFixed(2),FontWeight.normal,FontWeight.normal,Colors.lightBlueAccent),
-            balanceSheetRow("Retained Profits - YTD","",profit.toStringAsFixed(2),FontWeight.normal,FontWeight.normal,Colors.grey),
-            //balanceSheetRow("Retained Profits - MTD","","0.00",FontWeight.normal,FontWeight.normal,Colors.lightBlueAccent),
-            balanceSheetRow("Shareholder Equity","",tot.toStringAsFixed(2),FontWeight.bold,FontWeight.bold,Colors.grey),
-            balanceSheetRow("","","",FontWeight.normal,FontWeight.normal,Colors.lightBlueAccent),
+            child: balanceSheetRow(
+                "Fixed Assets",
+                "",
+                fixedAssets.toStringAsFixed(2),
+                FontWeight.normal,
+                FontWeight.normal,
+                Colors.lightBlueAccent),
+          ),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AssetsRoute(
+                      ky: "2",
+                      comment: "Current Assets",
+                    ),
+                  ));
+              // Add what you want to do on tap
+            },
+            child: balanceSheetRow(
+                "Current Assets",
+                "",
+                currentAssets.toStringAsFixed(2),
+                FontWeight.normal,
+                FontWeight.normal,
+                Colors.grey),
+          ),
+          balanceSheetRow("Total Assets", "", totalAssets.toStringAsFixed(2),
+              FontWeight.bold, FontWeight.bold, Colors.lightBlueAccent),
+          balanceSheetRow(
+              "", "", "", FontWeight.normal, FontWeight.normal, Colors.grey),
+          balanceSheetRow("Liabilities", "", "", FontWeight.bold,
+              FontWeight.bold, Colors.lightBlueAccent),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AssetsRoute(
+                      ky: "3",
+                      comment: "Current Liabilities",
+                    ),
+                  ));
+              // Add what you want to do on tap
+            },
+            child: balanceSheetRow(
+                "Current Liabilities",
+                "",
+                currentLiabilities.toStringAsFixed(2),
+                FontWeight.normal,
+                FontWeight.normal,
+                Colors.grey),
+          ),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AssetsRoute(
+                      ky: "4",
+                      comment: "Long Term Liabilities",
+                    ),
+                  ));
+              // Add what you want to do on tap
+            },
+            child: balanceSheetRow(
+                "Long Term Liabilities",
+                "",
+                longTermLiabilities.toStringAsFixed(2),
+                FontWeight.normal,
+                FontWeight.normal,
+                Colors.lightBlueAccent),
+          ),
+          balanceSheetRow(
+              "Total Liabilities",
+              "",
+              totalLiabilities.toStringAsFixed(2),
+              FontWeight.bold,
+              FontWeight.bold,
+              Colors.grey),
+          balanceSheetRow("", "", "", FontWeight.normal, FontWeight.normal,
+              Colors.lightBlueAccent),
+          balanceSheetRow("Owners Equity", "", "", FontWeight.bold,
+              FontWeight.normal, Colors.grey),
+          balanceSheetRow("Contributed Capital", "", equity.toStringAsFixed(2),
+              FontWeight.normal, FontWeight.normal, Colors.lightBlueAccent),
+          balanceSheetRow(
+              "Retained Profits - YTD",
+              "",
+              profit.toStringAsFixed(2),
+              FontWeight.normal,
+              FontWeight.normal,
+              Colors.grey),
+          //balanceSheetRow("Retained Profits - MTD","","0.00",FontWeight.normal,FontWeight.normal,Colors.lightBlueAccent),
+          balanceSheetRow("Shareholder Equity", "", tot.toStringAsFixed(2),
+              FontWeight.bold, FontWeight.bold, Colors.grey),
+          balanceSheetRow("", "", "", FontWeight.normal, FontWeight.normal,
+              Colors.lightBlueAccent),
 
-            ///balncesheet rows end
-
+          ///balncesheet rows end
 
           // Container(
           //     child: SfDataGrid(
@@ -7098,38 +7696,37 @@ class BSPageState extends State<BSPage> {
           //     ),
           //   ),
 
-
-            //Initialize the chart widget
-          ],),
-        bottomNavigationBar: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.wallet),
-              label: 'Revenue',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.add_circle),
-              label: '',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.pie_chart),
-              label: 'Expenses',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.attach_money_sharp),
-              label: 'Funding',
-            ),
-          ],
-          currentIndex: _selectedIndex,
-          selectedItemColor: Colors.amber[800],
-          unselectedItemColor: Colors.blue,
-          onTap: _onItemTapped,
-        ),
-
+          //Initialize the chart widget
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.wallet),
+            label: 'Revenue',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add_circle),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.pie_chart),
+            label: 'Expenses',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.attach_money_sharp),
+            label: 'Valuation',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.amber[800],
+        unselectedItemColor: Colors.blue,
+        onTap: _onItemTapped,
+      ),
     );
   }
 
@@ -7351,12 +7948,11 @@ class AdvisoryPageState extends State<AdvisoryPage> {
   TextEditingController descController = new TextEditingController();
   TextEditingController attendingController = new TextEditingController();
 
-
-
   late DatabaseReference advisory_reference;
   Future<void> _showMyDialog() async {
     String uid = user?.uid ?? 'uid';
-    advisory_reference= FirebaseDatabase.instance.ref().child('advisory/' + uid);
+    advisory_reference =
+        FirebaseDatabase.instance.ref().child('advisory/' + uid);
     //await Future.delayed(Duration(seconds: 2));
     return showDialog<void>(
       context: context,
@@ -7367,8 +7963,8 @@ class AdvisoryPageState extends State<AdvisoryPage> {
             '  360° Advisory      ',
             textAlign: TextAlign.center,
             style: TextStyle(
-                backgroundColor: Colors.blue,
-                color:Colors.white,
+              backgroundColor: Colors.blue,
+              color: Colors.white,
             ),
           ),
           content: SingleChildScrollView(
@@ -7439,7 +8035,6 @@ class AdvisoryPageState extends State<AdvisoryPage> {
     );
   }
 
-
   // Check if the user is signed in
   void _onItemTapped(int index) {
     setState(() {
@@ -7447,7 +8042,7 @@ class AdvisoryPageState extends State<AdvisoryPage> {
     });
     switch (index) {
       case 0:
-      // only scroll to top when current index is selected.
+        // only scroll to top when current index is selected.
         Navigator.push(
             context, MaterialPageRoute(builder: (context) => SignIn()));
         break;
@@ -7473,6 +8068,7 @@ class AdvisoryPageState extends State<AdvisoryPage> {
                     children: [
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -7483,8 +8079,12 @@ class AdvisoryPageState extends State<AdvisoryPage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('Income Statement')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -7495,18 +8095,41 @@ class AdvisoryPageState extends State<AdvisoryPage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('     Balance Sheet   ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                              MaterialPageRoute(
+                                  builder: (context) => FundingPage()),
                             ); // Navigate back to first route when tapped.
                           },
-                          child: Text('     $threeQuarterTurn Business Advisory   ')),
+                          child: Text('     Funding  ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text(
+                              '     $threeQuarterTurn Business Advisory   ')),
                     ],
                   ),
                   const SizedBox(height: 15),
@@ -7522,7 +8145,7 @@ class AdvisoryPageState extends State<AdvisoryPage> {
         break;
       case 4:
         Navigator.push(
-            context, MaterialPageRoute(builder: (context) => FundingPage()));
+            context, MaterialPageRoute(builder: (context) => ValuationPage()));
         break;
     }
   }
@@ -7545,7 +8168,7 @@ class AdvisoryPageState extends State<AdvisoryPage> {
   late Query dbRef;
   late DatabaseReference reference, reference1;
   String currentValue = '0';
-  String sme = '';
+  String sme = '', currency = '';
 
   getDateValue(date) {
     String uid = user?.uid ?? 'uid';
@@ -7556,12 +8179,8 @@ class AdvisoryPageState extends State<AdvisoryPage> {
         .listen((event) {
       Map rev = event.snapshot.value as Map;
       currentValue = rev['amount'];
-
     });
-
   }
-
-
 
   Future<void> morningMessage() async {
     String uid = user?.uid ?? 'uid';
@@ -7583,7 +8202,6 @@ class AdvisoryPageState extends State<AdvisoryPage> {
     DataSnapshot snapshot = await dbRefe.get();
 
     if (snapshot.value == null) {
-
       Map<String, String> cartegories = {
         'Advertising': '0',
       };
@@ -7593,7 +8211,7 @@ class AdvisoryPageState extends State<AdvisoryPage> {
         builder: (BuildContext context) => AlertDialog(
           title: const Text('Rise and shine.'),
           content: Text(
-              'New day! New opportunities! Your revenue target for today is \$' +
+              'New day! New opportunities! Your revenue target for today is ' +
                   budget.toStringAsFixed(2)),
           actions: <Widget>[
             // TextButton(
@@ -7610,13 +8228,10 @@ class AdvisoryPageState extends State<AdvisoryPage> {
           ],
         ),
       );
-    } else {
-
-    }
+    } else {}
 
     Timer mytimer = Timer.periodic(Duration(seconds: 1800), (timer) {
       if (snapshot.value == null) {
-
         Map<String, String> cartegories = {
           'Advertising': '0',
         };
@@ -7626,7 +8241,7 @@ class AdvisoryPageState extends State<AdvisoryPage> {
           builder: (BuildContext context) => AlertDialog(
             title: const Text('Rise and shine.'),
             content: Text(
-                'New day! New opportunities! Your revenue target for today is \$' +
+                'New day! New opportunities! Your revenue target for today is ' +
                     budget.toStringAsFixed(2)),
             actions: <Widget>[
               // TextButton(
@@ -7643,9 +8258,7 @@ class AdvisoryPageState extends State<AdvisoryPage> {
             ],
           ),
         );
-      } else {
-
-      }
+      } else {}
     });
   }
 
@@ -7672,7 +8285,8 @@ class AdvisoryPageState extends State<AdvisoryPage> {
     FirebaseDatabase.instance
         .ref()
         .child('trackRevenue/' + uid + '/' + actualMonthRef + "/")
-        .orderByChild('date').limitToLast(30)
+        .orderByChild('date')
+        .limitToLast(30)
         .onChildAdded
         .listen((event) {
       Map rev = event.snapshot.value as Map;
@@ -7692,9 +8306,8 @@ class AdvisoryPageState extends State<AdvisoryPage> {
       if (user['email'] == mail) {
         setState(() {
           sme = user['sme'];
+          currency = user['currency'];
         });
-
-
       }
     });
     Map? revenueTrack;
@@ -7712,7 +8325,8 @@ class AdvisoryPageState extends State<AdvisoryPage> {
     FirebaseDatabase.instance
         .ref()
         .child('Revenue/' + uid)
-        .orderByChild("date").limitToLast(30)
+        .orderByChild("date")
+        .limitToLast(30)
         .onChildAdded
         .listen((event) {
       Map revenue = event.snapshot.value as Map;
@@ -7789,7 +8403,7 @@ class AdvisoryPageState extends State<AdvisoryPage> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '\$' + revenue['amount'],
+                        '' + revenue['amount'],
                         style: TextStyle(
                           fontSize: 38,
                         ),
@@ -7817,8 +8431,8 @@ class AdvisoryPageState extends State<AdvisoryPage> {
                 ),
               ),
             ),
-            const Text(
-              'United States Dollar',
+            Text(
+              '$currency',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
@@ -7841,7 +8455,7 @@ class AdvisoryPageState extends State<AdvisoryPage> {
               ],
               items: [
                 ...MenuItems.firstItems.map(
-                      (item) => DropdownMenuItem<MenuItem>(
+                  (item) => DropdownMenuItem<MenuItem>(
                     value: item,
                     child: MenuItems.buildItem(item),
                   ),
@@ -7849,7 +8463,7 @@ class AdvisoryPageState extends State<AdvisoryPage> {
                 const DropdownMenuItem<Divider>(
                     enabled: false, child: Divider()),
                 ...MenuItems.secondItems.map(
-                      (item) => DropdownMenuItem<MenuItem>(
+                  (item) => DropdownMenuItem<MenuItem>(
                     value: item,
                     child: MenuItems.buildItem(item),
                   ),
@@ -7882,9 +8496,10 @@ class AdvisoryPageState extends State<AdvisoryPage> {
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                //border: Border.all(width: 2.0, color: insightColor2),
-              ),
-              child: Text("Sometimes it’s exhausting growing your small business to become a big business of tomorrow, you need to bounce of key strategic with sharp minds, our pool of small business experts will be there for you to bounce off ideas through our 360° Advisory.\n\n Simply Set A Board Meeting with our team, to get third opinion on our strategic action plan and we will assign our best advisor with deep expertise in the area.",
+                  //border: Border.all(width: 2.0, color: insightColor2),
+                  ),
+              child: Text(
+                "Sometimes it’s exhausting growing your small business to become a big business of tomorrow, you need to bounce of key strategic with sharp minds, our pool of small business experts will be there for you to bounce off ideas through our 360° Advisory.\n\n Simply Set A Board Meeting with our team, to get third opinion on our strategic action plan and we will assign our best advisor with deep expertise in the area.",
                 textAlign: TextAlign.center,
               ),
             ),
@@ -7901,21 +8516,59 @@ class AdvisoryPageState extends State<AdvisoryPage> {
                     onPressed: () {
                       _showMyDialog(); // Navigate back to first route when tapped.
                     },
-                    child: Row(children:[
+                    child: Row(children: [
                       Icon(Icons.arrow_circle_right_outlined),
-                      Text( 'Set A Board Meeting')
+                      Text('Set A Board Meeting')
                     ])),
               ],
             ),
           ),
-          const SizedBox(height:10),
+          Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                    style: TextButton.styleFrom(
+                      primary: Colors.black,
+                      onSurface: Colors.black,
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: BorderSide(color: Colors.blue, width: 2),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  MyadvisorPage())); // Navigate back to first route when tapped.
+                    },
+                    child: Row(children: [
+                      Icon(Icons.arrow_circle_right_outlined),
+                      Text(
+                        'My Advisor',
+                        style: TextStyle(
+                          color: Colors.black,
+                        ),
+                      )
+                    ])),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(width: 8.0, color: Colors.blue),
+              ),
+            ),
             child: Row(
               children: [
                 Expanded(
                   child: Text(
-                    'Status',
+                    'My Meetings\n\n\nStatus',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                     ),
@@ -7923,7 +8576,7 @@ class AdvisoryPageState extends State<AdvisoryPage> {
                 ),
                 Expanded(
                   child: Text(
-                    'Agenda',
+                    '\n\n\nAgenda',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                     ),
@@ -7931,7 +8584,7 @@ class AdvisoryPageState extends State<AdvisoryPage> {
                 ),
                 Expanded(
                   child: Text(
-                    'Attachments',
+                    '\n\n\nAttachments',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                     ),
@@ -7939,7 +8592,7 @@ class AdvisoryPageState extends State<AdvisoryPage> {
                 ),
                 Expanded(
                   child: Text(
-                    '   Date',
+                    '\n\n\n   Date',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                     ),
@@ -7949,19 +8602,18 @@ class AdvisoryPageState extends State<AdvisoryPage> {
             ),
           ),
 
-          Image.asset('assets/model.png',
+          Image.asset(
+            'assets/model.png',
             width: 230,
-            height:430,
+            height: 430,
           ),
           const SizedBox(
-            height: 30, // <-- SEE HERE
+            height: 30,
           ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-
         items: const <BottomNavigationBarItem>[
-
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
@@ -7980,7 +8632,7 @@ class AdvisoryPageState extends State<AdvisoryPage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.attach_money_sharp),
-            label: 'Funding',
+            label: 'Valuation',
           ),
         ],
         currentIndex: _selectedIndex,
@@ -7992,15 +8644,8 @@ class AdvisoryPageState extends State<AdvisoryPage> {
   }
 }
 
-
 class AssetsRoute extends StatefulWidget {
-
-
-  AssetsRoute(
-      {super.key,
-        required this.ky,
-        required this.comment});
-
+  AssetsRoute({super.key, required this.ky, required this.comment});
 
   final String comment;
 
@@ -8022,7 +8667,7 @@ class AssetsRouteState extends State<AssetsRoute> {
 
     switch (index) {
       case 0:
-      // only scroll to top when current index is selected.
+        // only scroll to top when current index is selected.
         Navigator.push(
             context, MaterialPageRoute(builder: (context) => SignIn()));
         break;
@@ -8048,6 +8693,7 @@ class AssetsRouteState extends State<AssetsRoute> {
                     children: [
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -8058,8 +8704,12 @@ class AssetsRouteState extends State<AssetsRoute> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('Income Statement')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -8070,18 +8720,44 @@ class AssetsRouteState extends State<AssetsRoute> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('     Balance Sheet   ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                              MaterialPageRoute(
+                                  builder: (context) => FundingPage()),
                             ); // Navigate back to first route when tapped.
                           },
-                          child: Text('     $threeQuarterTurn Business Advisory  ')),
+                          child: Text('     Funding  ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text(
+                              '     $threeQuarterTurn Business Advisory  ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 15),
@@ -8097,30 +8773,37 @@ class AssetsRouteState extends State<AssetsRoute> {
         break;
       case 4:
         Navigator.push(
-            context, MaterialPageRoute(builder: (context) => FundingPage()));
+            context, MaterialPageRoute(builder: (context) => ValuationPage()));
         break;
     }
   }
 
-
   final User? user = Auth().currentUser;
   String uid = '';
-  late DatabaseReference reference,dbRef;
+  late DatabaseReference reference, dbRef;
   void initState() {
-    String key=widget.ky;
+    String key = widget.ky;
     String uid = user?.uid ?? 'uid';
     setState(() {
-      if(key=="1") {
-        dbRef = FirebaseDatabase.instance.ref().child('balanceSheet' + '/' + uid+'/fixedAssets');
+      if (key == "1") {
+        dbRef = FirebaseDatabase.instance
+            .ref()
+            .child('balanceSheet' + '/' + uid + '/fixedAssets');
       }
-      if(key=="2") {
-        dbRef = FirebaseDatabase.instance.ref().child('balanceSheet' + '/' + uid+'/currentAssets');
+      if (key == "2") {
+        dbRef = FirebaseDatabase.instance
+            .ref()
+            .child('balanceSheet' + '/' + uid + '/currentAssets');
       }
-      if(key=="3") {
-        dbRef = FirebaseDatabase.instance.ref().child('balanceSheet' + '/' + uid+'/currentLiability');
+      if (key == "3") {
+        dbRef = FirebaseDatabase.instance
+            .ref()
+            .child('balanceSheet' + '/' + uid + '/currentLiability');
       }
-      if(key=="4") {
-        dbRef = FirebaseDatabase.instance.ref().child('balanceSheet' + '/' + uid+'/longtermLiability');
+      if (key == "4") {
+        dbRef = FirebaseDatabase.instance
+            .ref()
+            .child('balanceSheet' + '/' + uid + '/longtermLiability');
       }
     });
   }
@@ -8132,26 +8815,28 @@ class AssetsRouteState extends State<AssetsRoute> {
           children: [
             Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      revenue['cartegory']+" - "+revenue['title']+"\n"+revenue['description'],
-                    ),
-                  ],
-                )),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  revenue['cartegory'] +
+                      " - " +
+                      revenue['title'] +
+                      "\n" +
+                      revenue['description'],
+                ),
+              ],
+            )),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  "\$"+revenue['amount'],
+                  "" + revenue['amount'],
                 ),
               ],
             )
-
           ],
         ));
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -8160,7 +8845,7 @@ class AssetsRouteState extends State<AssetsRoute> {
         title: Text(widget.comment),
       ),
       body: ListView(
-        children:[
+        children: [
           SingleChildScrollView(
             child: Column(
               children: [
@@ -8200,7 +8885,7 @@ class AssetsRouteState extends State<AssetsRoute> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.attach_money_sharp),
-            label: 'Funding',
+            label: 'Valuation',
           ),
         ],
         currentIndex: 2,
@@ -8211,8 +8896,6 @@ class AssetsRouteState extends State<AssetsRoute> {
     );
   }
 }
-
-
 
 class FixedCostsPage extends StatefulWidget {
   // ignore: prefer_const_constructors_in_immutables
@@ -8239,7 +8922,7 @@ class FixedCostsPageState extends State<FixedCostsPage> {
     });
     switch (index) {
       case 0:
-      // only scroll to top when current index is selected.
+        // only scroll to top when current index is selected.
         Navigator.push(
             context, MaterialPageRoute(builder: (context) => SignIn()));
         break;
@@ -8265,6 +8948,7 @@ class FixedCostsPageState extends State<FixedCostsPage> {
                     children: [
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -8275,8 +8959,12 @@ class FixedCostsPageState extends State<FixedCostsPage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('Income Statement')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
@@ -8287,18 +8975,41 @@ class FixedCostsPageState extends State<FixedCostsPage> {
                             ); // Navigate back to first route when tapped.
                           },
                           child: const Text('     Balance Sheet   ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
                       ElevatedButton(
                           style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
                             onSurface: Colors.white,
                             backgroundColor: Colors.blue,
                           ),
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => AdvisoryPage()),
+                              MaterialPageRoute(
+                                  builder: (context) => FundingPage()),
                             ); // Navigate back to first route when tapped.
                           },
-                          child: Text('     $threeQuarterTurn Business Advisory   ')),
+                          child: Text('     Funding  ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text(
+                              '     $threeQuarterTurn Business Advisory   ')),
                     ],
                   ),
                   const SizedBox(height: 15),
@@ -8314,7 +9025,7 @@ class FixedCostsPageState extends State<FixedCostsPage> {
         break;
       case 4:
         Navigator.push(
-            context, MaterialPageRoute(builder: (context) => FundingPage()));
+            context, MaterialPageRoute(builder: (context) => ValuationPage()));
         break;
     }
   }
@@ -8392,13 +9103,32 @@ class FixedCostsPageState extends State<FixedCostsPage> {
   double percentageExpenses = 0;
   double fixedCosts = 0, dailyExp = 0;
   int countExpenses = 0;
-  String sme = '';
+  String sme = '', currency = '';
 
   Future<void> updateMonthlyExpenses(amount, date, cart) async {
     double currentValue = 0, newValue = 0, cartValue = 0, cartNewValue = 0;
     String uid = user?.uid ?? 'uid';
     String? cartKey;
     DatabaseReference refe;
+
+    DatabaseReference np_refe;
+    double net_position = 0;
+    np_refe = FirebaseDatabase.instance
+        .ref()
+        .child('net_position/' + uid + '/' + actualMonthRef);
+    FirebaseDatabase.instance
+        .ref()
+        .child('net_position/' + uid + '/')
+        .onChildAdded
+        .listen((event) {
+      Map rev = event.snapshot.value as Map;
+      setState(() {
+        if (rev['month'] == actualMonthRef) {
+          net_position = double.parse(rev['amount']);
+        }
+      });
+    });
+
     refe = FirebaseDatabase.instance
         .ref()
         .child('trackFixedCosts/' + uid + '/' + actualMonthRef + "/" + date);
@@ -8407,7 +9137,6 @@ class FixedCostsPageState extends State<FixedCostsPage> {
         .child('trackFixedCostsCartegory/' + uid + '/' + actualMonthRef);
     DataSnapshot snapshot = await dbRefe.get();
     if (snapshot.value == null) {
-
       Map<String, String> cartegories = {
         'Rent': '0',
         'Wages & Salaries': '0',
@@ -8442,26 +9171,29 @@ class FixedCostsPageState extends State<FixedCostsPage> {
 
           // rev['key'] = event.snapshot.key;
         }
-
-
       });
     });
 
     await Future.delayed(Duration(seconds: 1));
     newValue = currentValue + double.parse(amount);
     cartNewValue = cartValue + double.parse(amount);
-
+    net_position -= double.parse(amount);
+    Map<String, String> trackNP = {
+      'amount': net_position.toString(),
+      'month': actualMonthRef,
+    };
+    np_refe.set(trackNP);
 
     Map<String, String> trackExpenses = {
       'amount': newValue.toString(),
       'date': date,
-      "cogs":"0",
+      "cogs": "0",
       cart: cartNewValue.toString(),
     };
 
     refe.update(trackExpenses);
     Map<String, String> trackCart = {
-      "cogs":"0",
+      "cogs": "0",
       cart: cartNewValue.toString(),
       'month': actualMonthRef,
     };
@@ -8474,6 +9206,8 @@ class FixedCostsPageState extends State<FixedCostsPage> {
     super.initState();
     String uid = user?.uid ?? 'uid';
     String mail = user?.email ?? 'email';
+    int k = 0;
+    double temp = 0;
 
     FirebaseDatabase.instance
         .ref()
@@ -8484,23 +9218,44 @@ class FixedCostsPageState extends State<FixedCostsPage> {
 
       setState(() {
         fixedCosts = double.parse(revenue['fixedCosts']);
+        temp = double.parse(revenue['fixedCosts']) / 30;
+        for (int i = 0; i < 31; i++) {
+          if (i < 10) {
+            data.add(_SalesData(
+                "0" + i.toString(), double.parse(temp.toStringAsFixed(0))));
+          } else {
+            data.add(_SalesData(
+                i.toString(), double.parse(temp.toStringAsFixed(0))));
+          }
+        }
       });
     });
     FirebaseDatabase.instance
         .ref()
         .child('trackFixedCosts/' + uid + '/' + actualMonthRef + "/")
-        .orderByChild('date').limitToLast(30)
+        .orderByChild('date')
+        .limitToLast(30)
         .onChildAdded
         .listen((event) {
       Map rev = event.snapshot.value as Map;
       setState(() {
         if (rev['date'] == actualDate) {
-          dailyExp += double.parse(rev['amount'])+double.parse(rev['cogs']);
+          dailyExp += double.parse(rev['amount']) + double.parse(rev['cogs']);
         }
 
-        data2.add(_SalesData(
-            rev['date'].substring(0, 2), double.parse(rev['amount'])+double.parse(rev['cogs'])));
-        data.add(_SalesData(rev['date'].substring(0, 2), fixedCosts/30));
+        if (k < 1) {
+          k++;
+          for (int i = 0; i < int.parse(rev['date'].substring(0, 2)); i++) {
+            if (i < 10) {
+              data2.add(_SalesData("0" + i.toString(), 0));
+            } else {
+              data2.add(_SalesData(i.toString(), 0));
+            }
+          }
+        }
+        data2.add(_SalesData(rev['date'].substring(0, 2),
+            double.parse(rev['amount']) + double.parse(rev['cogs'])));
+        // data.add(_SalesData(rev['date'].substring(0, 2), fixedCosts/30));
       });
     });
     FirebaseDatabase.instance.ref().child('User/').onChildAdded.listen((event) {
@@ -8508,8 +9263,8 @@ class FixedCostsPageState extends State<FixedCostsPage> {
       if (user['email'] == mail) {
         setState(() {
           sme = user['sme'];
+          currency = user['currency'];
         });
-
       }
     });
     FirebaseDatabase.instance
@@ -8588,7 +9343,7 @@ class FixedCostsPageState extends State<FixedCostsPage> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '\$' + revenue['amount'],
+                        '' + revenue['amount'],
                         style: TextStyle(
                           fontSize: 38,
                         ),
@@ -8597,6 +9352,7 @@ class FixedCostsPageState extends State<FixedCostsPage> {
               ),
             ])));
   }
+
   final _formKey = GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) {
@@ -8616,8 +9372,8 @@ class FixedCostsPageState extends State<FixedCostsPage> {
                 ),
               ),
             ),
-            const Text(
-              'Zimbabwe USD',
+            Text(
+              '$currency',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
@@ -8640,7 +9396,7 @@ class FixedCostsPageState extends State<FixedCostsPage> {
               ],
               items: [
                 ...MenuItems.firstItems.map(
-                      (item) => DropdownMenuItem<MenuItem>(
+                  (item) => DropdownMenuItem<MenuItem>(
                     value: item,
                     child: MenuItems.buildItem(item),
                   ),
@@ -8648,7 +9404,7 @@ class FixedCostsPageState extends State<FixedCostsPage> {
                 const DropdownMenuItem<Divider>(
                     enabled: false, child: Divider()),
                 ...MenuItems.secondItems.map(
-                      (item) => DropdownMenuItem<MenuItem>(
+                  (item) => DropdownMenuItem<MenuItem>(
                     value: item,
                     child: MenuItems.buildItem(item),
                   ),
@@ -8678,63 +9434,65 @@ class FixedCostsPageState extends State<FixedCostsPage> {
           //Initialize the chart widget
           Container(
               padding: const EdgeInsets.all(10),
-              child:Row(children:
-              [
-                Expanded(
-                  child:Column(children:[
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => ExpensesPage()),
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        primary: Colors.white,
-                        backgroundColor: Colors.blue, // Background Color
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(children: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => ExpensesPage()),
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          primary: Colors.white,
+                          backgroundColor: Colors.red, // Background Color
+                        ),
+                        child: const Text(
+                          'Variable Costs',
+                          style: TextStyle(fontSize: 18),
+                        ),
                       ),
-                      child: const Text(
-                        'Variable Costs',
-                        style: TextStyle(fontSize: 18),
+                    ]),
+                  ),
+                  Expanded(
+                    child: Column(children: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => FixedCostsPage()),
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          primary: Colors.black,
+                          backgroundColor: Colors.white, // Background Color
+                        ),
+                        child: const Text(
+                          'Fixed Costs',
+                          style: TextStyle(fontSize: 18),
+                        ),
                       ),
-                    ),
-                  ]),
-                ),
-                Expanded(
-                  child:Column(children:[
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => FixedCostsPage()),
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        primary: Colors.black,
-                        backgroundColor: Colors.white, // Background Color
-                      ),
-                      child: const Text(
-                        'Fixed Costs',
-                        style: TextStyle(fontSize: 18),
-                      ),
-                    ),
-                  ]),
-                ),
-              ],
-              )
-          ),
+                    ]),
+                  ),
+                ],
+              )),
           Container(
             padding: const EdgeInsets.all(10),
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                // border: Border.all(width: 2.0, color: insightColor2),
-              ),
+                  // border: Border.all(width: 2.0, color: insightColor2),
+                  ),
               child: SfCartesianChart(
                   primaryXAxis: CategoryAxis(),
+                  palette: <Color>[Colors.red, Colors.blue],
                   // Chart title
-                  title:
-                  ChartTitle(text: 'Month Fixed Costs - $the_month $the_year'),
+                  title: ChartTitle(
+                      text: 'Month Fixed Costs - $the_month $the_year'),
                   // Enable legend
                   legend: Legend(isVisible: false),
                   // Enable tooltip
@@ -8762,9 +9520,9 @@ class FixedCostsPageState extends State<FixedCostsPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text('Fixed Costs'),
-                Icon(Icons.square, color: Colors.blue),
+                Icon(Icons.square, color: Colors.red),
                 Text('Budget'),
-                Icon(Icons.square, color: Colors.grey),
+                Icon(Icons.square, color: Colors.blue),
               ],
             ),
           ),
@@ -8777,7 +9535,7 @@ class FixedCostsPageState extends State<FixedCostsPage> {
                     color: Colors.grey,
                     child: Column(
                       children: [
-                        Text("\$" + dailyExp.toStringAsFixed(0)),
+                        Text("" + dailyExp.toStringAsFixed(0)),
                         const Text(''),
                         const Text('Daily FCosts'),
                       ],
@@ -8790,7 +9548,7 @@ class FixedCostsPageState extends State<FixedCostsPage> {
                     child: Column(
                       children: [
                         const Text('Average'),
-                        Text("\$" + percentageExpenses.toStringAsFixed(0)),
+                        Text("" + percentageExpenses.toStringAsFixed(0)),
                         const Text('Daily FCosts'),
                       ],
                     ),
@@ -8802,7 +9560,7 @@ class FixedCostsPageState extends State<FixedCostsPage> {
                     child: Column(
                       children: [
                         const Text('MTD'),
-                        Text("\$" + totalExpenses.toString()),
+                        Text("" + totalExpenses.toString()),
                         const Text('FCosts'),
                       ],
                     ),
@@ -8815,7 +9573,7 @@ class FixedCostsPageState extends State<FixedCostsPage> {
             onPressed: () => showDialog<String>(
               context: context,
               builder: (BuildContext context) => Dialog(
-                child:Form(
+                child: Form(
                   key: _formKey,
                   child: ListView(
                     padding: const EdgeInsets.all(8.0),
@@ -8838,7 +9596,6 @@ class FixedCostsPageState extends State<FixedCostsPage> {
                             height: 25,
                           ),
                           SelectFormField(
-
                             type: SelectFormFieldType.dialog,
                             controller: planController,
                             //initialValue: _initialValue,
@@ -8871,7 +9628,7 @@ class FixedCostsPageState extends State<FixedCostsPage> {
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
-                              labelText: 'Amount \$',
+                              labelText: 'Amount ',
                               hintText: 'Enter Amount',
                             ),
                           ),
@@ -8976,6 +9733,10 @@ class FixedCostsPageState extends State<FixedCostsPage> {
                                 // ),
                                 onPressed: () {
                                   if (_formKey.currentState!.validate()) {
+                                      if(dateController.text=="")
+                                    {
+                                      dateController.text=actualDate;
+                                    }
                                     Map<String, String> revenue = {
                                       'amount': amountController.text,
                                       'margin': marginController.text,
@@ -8984,12 +9745,15 @@ class FixedCostsPageState extends State<FixedCostsPage> {
                                       'plan': planController.text
                                     };
 
-                                    updateMonthlyExpenses(amountController.text,
-                                        dateController.text, planController.text);
+                                    updateMonthlyExpenses(
+                                        amountController.text,
+                                        dateController.text,
+                                        planController.text);
                                     reference.push().set(revenue);
 
                                     Navigator.pop(context);
-                                  };
+                                  }
+                                  ;
                                 },
                                 child: const Text('Save'),
                                 color: Colors.blue,
@@ -9019,7 +9783,8 @@ class FixedCostsPageState extends State<FixedCostsPage> {
                         ],
                       ),
                     ],
-                  ),),
+                  ),
+                ),
               ),
             ),
             child: const Text('Add Fixed Cost'),
@@ -9049,7 +9814,6 @@ class FixedCostsPageState extends State<FixedCostsPage> {
           SizedBox(
             height: 110, // <-- SEE HERE
           ),
-
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -9072,7 +9836,1655 @@ class FixedCostsPageState extends State<FixedCostsPage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.attach_money_sharp),
-            label: 'Funding',
+            label: 'Valuation',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.amber[800],
+        unselectedItemColor: Colors.blue,
+        onTap: _onItemTapped,
+      ),
+    );
+  }
+}
+
+class ValuationPage extends StatefulWidget {
+  // ignore: prefer_const_constructors_in_immutables
+  ValuationPage({Key? key}) : super(key: key);
+  final User? user = Auth().currentUser;
+
+  @override
+  ValuationPageState createState() => ValuationPageState();
+}
+
+class ValuationPageState extends State<ValuationPage> {
+  final User? user = Auth().currentUser;
+
+  int _selectedIndex = 4;
+  TextEditingController areaController = new TextEditingController();
+  TextEditingController agendaController = new TextEditingController();
+  TextEditingController descController = new TextEditingController();
+  TextEditingController attendingController = new TextEditingController();
+  TextEditingController dateController2 = new TextEditingController();
+
+  Widget listExpenses({required Map revenue}) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              revenue['reason'],
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              revenue['date'],
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              revenue['status'],
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  late DatabaseReference advisory_reference;
+  String _valueChanged = '';
+  String _valueToValidate = '';
+  String _valueSaved = '';
+    String _valueChanged2 = '';
+  String _valueToValidate2 = '';
+  String _valueSaved2 = '';
+  final List<Map<String, dynamic>> _items = [
+    {
+      'value': 'Yes',
+      'label': 'Yes',
+      'icon': Icon(Icons.check),
+    },
+    {
+      'value': 'No',
+      'label': 'No',
+      'icon': Icon(Icons.info),
+    }
+  ];
+    final List<Map<String, dynamic>> _items2 = [
+    {
+      'value': 'Sell',
+      'label': 'Transaction ie to Sell',
+      'icon': null,
+    },
+    {
+      'value': 'Strategising',
+      'label': 'Value Creation ie Strategising',
+      'icon': null,
+    }
+  ];
+  GlobalKey<FormState> _oFormKey = GlobalKey<FormState>();
+  Future<void> _showMyDialog() async {
+    String uid = user?.uid ?? 'uid';
+    advisory_reference =
+        FirebaseDatabase.instance.ref().child('Valuation/' + uid);
+    //await Future.delayed(Duration(seconds: 2));
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            '  Business Valuation     ',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              backgroundColor: Colors.blue,
+              color: Colors.white,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Form(
+              key: _oFormKey,
+              child: ListBody(
+                children: <Widget>[
+                  SelectFormField(
+                      type: SelectFormFieldType.dialog,
+                      controller: areaController,
+                      //initialValue: _initialValue,
+                      icon: null,
+                      labelText: 'Reason for Business Valuation',
+                      changeIcon: true,
+                      dialogTitle: 'Valuation Reason',
+                      dialogCancelBtn: 'Close',
+                      enableSearch: false,
+                      dialogSearchHint: 'Reason for Business Valuation',
+                      items: _items2,
+                      onChanged: (val2) {
+                        setState(() {
+                          _valueChanged2 = val2;
+                        });
+                      },
+                      validator: (val2) {
+                        setState(() => _valueToValidate2 = val2 ?? '');
+                        if (val2 == null || val2.isEmpty) {
+                          return 'Field Required';
+                        }
+                        return null;
+                      },
+                      onSaved: (val2) => setState(() => _valueSaved2 = val2 ?? ''),
+                    ),
+                  const SizedBox(height: 15),
+                  Container(
+                    padding: const EdgeInsets.all(17),
+                    child: SelectFormField(
+                      type: SelectFormFieldType.dialog,
+                      controller: agendaController,
+                      //initialValue: _initialValue,
+                      icon: null,
+                      labelText: 'Do you want us to help you?',
+                      changeIcon: true,
+                      dialogTitle: 'Need Assistance?',
+                      dialogCancelBtn: 'Close',
+                      enableSearch: false,
+                      dialogSearchHint: 'Do yo want us to help you?',
+                      items: _items,
+                      onChanged: (val) {
+                        setState(() {
+                          _valueChanged = val;
+                        });
+                      },
+                      validator: (val) {
+                        setState(() => _valueToValidate = val ?? '');
+                        if (val == null || val.isEmpty) {
+                          return 'Field Required';
+                        }
+                        return null;
+                      },
+                      onSaved: (val) => setState(() => _valueSaved = val ?? ''),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  TextFormField(
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Field Required';
+                      }
+                      return null;
+                    },
+                    controller: descController,
+                    keyboardType: TextInputType.multiline,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Other Information ',
+                      hintText: 'Please enter other relevant information',
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  TextFormField(
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Field Required';
+                      }
+                      return null;
+                    },
+                    controller: attendingController,
+                    keyboardType: TextInputType.text,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Business Value Estimate',
+                      hintText: 'Estimate Business Value',
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  TextFormField(
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Field Required';
+                      }
+                      return null;
+                    },
+                    controller: dateController2,
+                    keyboardType: TextInputType.text,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'When do you expect your report?',
+                      hintText: 'When do you expect your report?',
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                ],
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Submit'),
+              onPressed: () {
+                if (_oFormKey.currentState!.validate()) {
+                  Map<String, String> revenue = {
+                    'value': attendingController.text,
+                    'description': descController.text,
+                    'help': agendaController.text,
+                    'reason': areaController.text,
+                    'date': dateController2.text,
+                    'status': 'pending'
+                  };
+
+                  advisory_reference.push().set(revenue);
+                  Navigator.of(context).pop();
+                }
+                ;
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Check if the user is signed in
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    switch (index) {
+      case 0:
+        // only scroll to top when current index is selected.
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => SignIn()));
+        break;
+      case 1:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => RevenuePage()));
+        break;
+      case 2:
+        showDialog<String>(
+          context: context,
+          builder: (BuildContext context) => Dialog(
+            alignment: Alignment.bottomCenter,
+            backgroundColor: Color.fromRGBO(0, 0, 0, 0.0),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Column(
+                    //crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => ISPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: const Text('Income Statement')),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => BSPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: const Text('     Balance Sheet   ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => FundingPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text('     Funding  ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text(
+                              '     $threeQuarterTurn Business Advisory   ')),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                ],
+              ),
+            ),
+          ),
+        );
+        break;
+      case 3:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => ExpensesPage()));
+        break;
+      case 4:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => ValuationPage()));
+        break;
+    }
+  }
+
+  List<_SalesData> data = [];
+  List<_SalesData> data2 = [];
+
+  double totalRevenue = 0;
+  double averageRevenue = 0;
+  double percentageRevenue = 0;
+  int countRevenue = 0;
+  double budget = 0, dailyRev = 0;
+
+  final amountController = TextEditingController();
+  final marginController = TextEditingController();
+  final dateController = TextEditingController();
+  final commentController = TextEditingController();
+  final planController = TextEditingController();
+  final Color unselectedItemColor = Colors.blue;
+  late Query dbRef, dbRef2;
+  late DatabaseReference reference, reference1;
+  String currentValue = '0';
+  String sme = '', currency = '';
+
+  getDateValue(date) {
+    String uid = user?.uid ?? 'uid';
+    FirebaseDatabase.instance
+        .ref()
+        .child('trackRevenue/' + uid + '/' + actualMonthRef + "/")
+        .onChildAdded
+        .listen((event) {
+      Map rev = event.snapshot.value as Map;
+      currentValue = rev['amount'];
+    });
+  }
+
+  Future<void> morningMessage() async {
+    String uid = user?.uid ?? 'uid';
+    double budget = 0;
+    FirebaseDatabase.instance
+        .ref()
+        .child('budgets/' + uid)
+        .onChildAdded
+        .listen((event) {
+      Map revenue = event.snapshot.value as Map;
+
+      setState(() {
+        budget = double.parse(revenue['revenueBudget']) / 30;
+      });
+    });
+    await Future.delayed(Duration(seconds: 1));
+    DatabaseReference dbRefe = FirebaseDatabase.instance.ref().child(
+        'trackMorningMessage/' + uid + '/' + actualMonthRef + '/' + actualDate);
+    DataSnapshot snapshot = await dbRefe.get();
+
+    if (snapshot.value == null) {
+      Map<String, String> cartegories = {
+        'Advertising': '0',
+      };
+
+      showDialog<String>(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Rise and shine.'),
+          content: Text(
+              'New day! New opportunities! Your revenue target for today is ' +
+                  budget.toStringAsFixed(2)),
+          actions: <Widget>[
+            // TextButton(
+            //   onPressed: () =>{ Navigator.pop(context, 'No')},
+            //   child: const Text('No'),
+            // ),
+            TextButton(
+              onPressed: () => {
+                dbRefe.set(cartegories),
+                Navigator.pop(context, 'No'),
+              },
+              child: const Text('Noted. Thank You.'),
+            ),
+          ],
+        ),
+      );
+    } else {}
+
+    Timer mytimer = Timer.periodic(Duration(seconds: 1800), (timer) {
+      if (snapshot.value == null) {
+        Map<String, String> cartegories = {
+          'Advertising': '0',
+        };
+
+        showDialog<String>(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: const Text('Rise and shine.'),
+            content: Text(
+                'New day! New opportunities! Your revenue target for today is ' +
+                    budget.toStringAsFixed(2)),
+            actions: <Widget>[
+              // TextButton(
+              //   onPressed: () =>{ Navigator.pop(context, 'No')},
+              //   child: const Text('No'),
+              // ),
+              TextButton(
+                onPressed: () => {
+                  dbRefe.set(cartegories),
+                  Navigator.pop(context, 'No'),
+                },
+                child: const Text('Noted. Thank You.'),
+              ),
+            ],
+          ),
+        );
+      } else {}
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    String uid = user?.uid ?? 'uid'; // <-- Their email
+    String mail = user?.email ?? 'email';
+
+    morningMessage();
+
+    FirebaseDatabase.instance
+        .ref()
+        .child('budgets/' + uid)
+        .onChildAdded
+        .listen((event) {
+      Map revenue = event.snapshot.value as Map;
+
+      setState(() {
+        budget = double.parse(revenue['revenueBudget']);
+      });
+    });
+    FirebaseDatabase.instance
+        .ref()
+        .child('trackRevenue/' + uid + '/' + actualMonthRef + "/")
+        .orderByChild('date')
+        .limitToLast(30)
+        .onChildAdded
+        .listen((event) {
+      Map rev = event.snapshot.value as Map;
+      setState(() {
+        if (rev['date'] == actualDate) {
+          dailyRev += double.parse(rev['amount']);
+        }
+
+        data2.add(_SalesData(
+            rev['date'].substring(0, 2), double.parse(rev['amount'])));
+        data.add(_SalesData(rev['date'].substring(0, 2), budget));
+      });
+    });
+
+    FirebaseDatabase.instance.ref().child('User/').onChildAdded.listen((event) {
+      Map user = event.snapshot.value as Map;
+      if (user['email'] == mail) {
+        setState(() {
+          sme = user['sme'];
+          currency = user['currency'];
+        });
+      }
+    });
+    Map? revenueTrack;
+    FirebaseDatabase.instance
+        .ref()
+        .child('trackRevenue/' + uid + '/' + actualMonthRef + "/")
+        .onChildAdded
+        .listen((event) {
+      revenueTrack = event.snapshot.value as Map;
+    });
+
+    String getDate = "";
+    double dateAmount = 0.0;
+
+    FirebaseDatabase.instance
+        .ref()
+        .child('Revenue/' + uid)
+        .orderByChild("date")
+        .limitToLast(30)
+        .onChildAdded
+        .listen((event) {
+      Map revenue = event.snapshot.value as Map;
+      countRevenue++;
+
+      setState(() {
+        totalRevenue += double.parse(revenue['amount']);
+        averageRevenue = totalRevenue / countRevenue;
+        percentageRevenue = (averageRevenue / totalRevenue) * 100;
+
+        if (getDate == revenue['date'].substring(0, 2)) {
+          getDate = "";
+          dateAmount += double.parse(revenue['amount']);
+        } else {
+          getDate = revenue['date'].substring(0, 2);
+          dateAmount += double.parse(revenue['amount']);
+        }
+      });
+      if (getDate != "") {
+        // data2.add(_SalesData(getDate, dateAmount));
+        // data.add(_SalesData(getDate, budget));
+        dateAmount = 0;
+      }
+    });
+    dbRef = FirebaseDatabase.instance.ref().child('Revenue' + '/' + uid);
+    dbRef2 = FirebaseDatabase.instance.ref().child('Valuation' + '/' + uid);
+    reference = FirebaseDatabase.instance.ref().child('Revenue' + '/' + uid);
+    reference1 = FirebaseDatabase.instance
+        .ref()
+        .child('trackRevenue/' + uid + '/' + actualMonthRef + "/");
+  }
+
+  Widget listRevenue({required Map revenue}) {
+    return GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => SecondRoute(
+                    ky: revenue['key'],
+                    amount: revenue['amount'],
+                    plan: revenue['plan'],
+                    comment: revenue['comment'],
+                    margin: revenue['margin'],
+                    date: revenue['date'])),
+          );
+          // Add what you want to do on tap
+        },
+        child: SingleChildScrollView(
+            padding: EdgeInsets.all(20),
+            child: Row(children: [
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(
+                  revenue['date'],
+                  style: TextStyle(
+                    color: Colors.grey[500],
+                  ),
+                ),
+                Text(
+                  'Daily Sales',
+                  style: TextStyle(
+                    fontSize: 22,
+                  ),
+                ),
+                Text(
+                  revenue['comment'],
+                  style: TextStyle(
+                    color: Colors.grey[500],
+                  ),
+                ),
+              ]),
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '' + revenue['amount'],
+                        style: TextStyle(
+                          fontSize: 38,
+                        ),
+                      ),
+                    ]),
+              ),
+            ])));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Color insightColor2 = Colors.blue;
+    return Scaffold(
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /*2*/
+            Container(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                sme,
+                style: TextStyle(
+                  fontSize: 15,
+                ),
+              ),
+            ),
+            Text(
+              '$currency',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        actions: <Widget>[
+          DropdownButtonHideUnderline(
+            child: DropdownButton2(
+              customButton: const Icon(
+                Icons.menu_rounded,
+                size: 46,
+                color: Colors.white,
+              ),
+              customItemsHeights: [
+                ...List<double>.filled(MenuItems.firstItems.length, 48),
+                8,
+                ...List<double>.filled(MenuItems.secondItems.length, 48),
+              ],
+              items: [
+                ...MenuItems.firstItems.map(
+                  (item) => DropdownMenuItem<MenuItem>(
+                    value: item,
+                    child: MenuItems.buildItem(item),
+                  ),
+                ),
+                const DropdownMenuItem<Divider>(
+                    enabled: false, child: Divider()),
+                ...MenuItems.secondItems.map(
+                  (item) => DropdownMenuItem<MenuItem>(
+                    value: item,
+                    child: MenuItems.buildItem(item),
+                  ),
+                ),
+              ],
+              onChanged: (value) {
+                MenuItems.onChanged(context, value as MenuItem);
+              },
+              itemHeight: 48,
+              itemPadding: const EdgeInsets.only(left: 16, right: 16),
+              dropdownWidth: 160,
+              dropdownPadding: const EdgeInsets.symmetric(vertical: 6),
+              dropdownDecoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                color: Colors.blue,
+              ),
+              dropdownElevation: 8,
+              offset: const Offset(0, 8),
+            ),
+          ),
+        ],
+        backgroundColor: Colors.blue,
+        automaticallyImplyLeading: false,
+      ),
+      body: ListView(
+        children: [
+          //Initialize the chart widget
+          Container(
+            padding: const EdgeInsets.all(10),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                  //border: Border.all(width: 2.0, color: insightColor2),
+                  ),
+              child: Text(
+                "Do you know the true value of your business?\n\nOur Business Valuation combined with out artificial intelligence will help you understand the true value of your business for various use cases. Our main valuation method is Discounted Free Cash Flow with guidance form Asset and Market Valuation. Once we have done a business valuation for your business, the value will be displayed below. Our main areas of business valuation include selling your business ‘as a whole or part, or going into a partnership where you have to exchange stake to explore positive synergies.",
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+          Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                    style: TextButton.styleFrom(
+                      onSurface: Colors.black,
+                      backgroundColor: Colors.blue,
+                    ),
+                    onPressed: null,
+                    child: Row(children: [
+                      Icon(Icons.arrow_circle_right_outlined),
+                      Text('$sme: Fair Value [NO VALUATION]')
+                    ])),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                    style: TextButton.styleFrom(
+                      onSurface: Colors.black,
+                      backgroundColor: Colors.blue,
+                    ),
+                    onPressed: () {
+                      _showMyDialog(); // Navigate back to first route when tapped.
+                    },
+                    child: Row(children: [
+                      Icon(Icons.arrow_circle_right_outlined),
+                      Text('Value My Business')
+                    ])),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(width: 8.0, color: Colors.blue),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Business Case',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    'Valuation Date',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    'Download',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                FirebaseAnimatedList(
+                  shrinkWrap: true,
+                  query: dbRef2,
+                  itemBuilder: (BuildContext context, DataSnapshot snapshot,
+                      Animation<double> animation, int index) {
+                    Map revenue = snapshot.value as Map;
+                    revenue['key'] = snapshot.key;
+
+                    return listExpenses(revenue: revenue);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.wallet),
+            label: 'Revenue',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add_circle),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.pie_chart),
+            label: 'Expenses',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.attach_money_sharp),
+            label: 'Valuation',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.amber[800],
+        unselectedItemColor: Colors.blue,
+        onTap: _onItemTapped,
+      ),
+    );
+  }
+}
+
+class MyadvisorPage extends StatefulWidget {
+  // ignore: prefer_const_constructors_in_immutables
+  MyadvisorPage({Key? key}) : super(key: key);
+  final User? user = Auth().currentUser;
+
+  @override
+  MyadvisorPageState createState() => MyadvisorPageState();
+}
+
+class MyadvisorPageState extends State<MyadvisorPage> {
+  final User? user = Auth().currentUser;
+//String uid = user?.uid ?? 'uid';
+  String email = "";
+  int _selectedIndex = 2;
+  TextEditingController areaController = new TextEditingController();
+  TextEditingController agendaController = new TextEditingController();
+  TextEditingController descController = new TextEditingController();
+  TextEditingController attendingController = new TextEditingController();
+  TextEditingController dateController2 = new TextEditingController();
+  String advisorNum = "",
+      advisorDesc = "",
+      advisorName = "",
+      advisorNumber = "",
+      advisorEmail = "",
+      advisorCountry = "",
+      advisorCity = "",
+      advisorQ1 = "",
+      advisorQ2 = "",
+      advisorEx1 = "",
+      advisorEx2 = "",
+      advisorEx3 = "",
+      advisorEx4 = "",
+      advisorEx5 = "",
+      advisorURL="";
+  startState() async {
+    // TODO: implement initState
+    email = user?.email ?? 'email';
+    FirebaseDatabase.instance.ref().child('User/').onChildAdded.listen((event) {
+      Map revenue = event.snapshot.value as Map;
+      revenue['key'] = event.snapshot.key;
+      if (email == revenue['email']) {
+        advisorEmail = revenue['advisorEmail'];
+        //smeNameController.text = mainSme;
+        //userNameController.text= revenue['fname'];
+        // Step 2 <- SEE HERE
+        //mainNumberController.text = revenue['number'].toString();
+        //descController.text = revenue['desc'];
+      }
+    });
+
+    await Future.delayed(Duration(seconds: 1));
+
+    FirebaseDatabase.instance
+        .ref()
+        .child('advisor/')
+        .onChildAdded
+        .listen((event) {
+      Map revenue = event.snapshot.value as Map;
+      revenue['key'] = event.snapshot.key;
+      if (advisorEmail == revenue['email']) {
+        print("napinda baba");
+        setState(() {
+          advisorNumber = revenue['number'];
+          advisorName = revenue['name'];
+          advisorCountry = revenue['country'];
+          advisorCity = revenue['city'];
+          advisorEx1 = revenue['exp1'];
+          advisorEx2 = revenue['exp2'];
+          advisorEx3 = revenue['exp3'];
+          advisorEx4 = revenue['exp4'];
+          advisorEx5 = revenue['exp5'];
+          advisorQ1 = revenue['q1'];
+          advisorQ2 = revenue['q2'];
+          advisorDesc = revenue['desc'];
+          advisorNum = revenue['num'];
+          if(revenue.containsKey('picture'))
+          {
+            advisorURL=revenue['picture'];
+          }
+        });
+      }
+    });
+  }
+
+  Widget listExpenses({required Map revenue}) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              revenue['reason'],
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              revenue['date'],
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              revenue['status'],
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  late DatabaseReference advisory_reference;
+  String _valueChanged = '';
+  String _valueToValidate = '';
+  String _valueSaved = '';
+  final List<Map<String, dynamic>> _items = [
+    {
+      'value': 'Yes',
+      'label': 'Yes',
+      'icon': Icon(Icons.check),
+    },
+    {
+      'value': 'No',
+      'label': 'No',
+      'icon': Icon(Icons.info),
+    }
+  ];
+  GlobalKey<FormState> _oFormKey = GlobalKey<FormState>();
+  Future<void> _showMyDialog() async {
+    String uid = user?.uid ?? 'uid';
+    advisory_reference =
+        FirebaseDatabase.instance.ref().child('Valuation/' + uid);
+    //await Future.delayed(Duration(seconds: 2));
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            '  Business Valuation     ',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              backgroundColor: Colors.blue,
+              color: Colors.white,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Form(
+              key: _oFormKey,
+              child: ListBody(
+                children: <Widget>[
+                  TextFormField(
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Field Required';
+                      }
+                      return null;
+                    },
+                    controller: areaController,
+                    keyboardType: TextInputType.text,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'What s the reason for Business Valuation',
+                      hintText: 'Valuation Reason',
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  Container(
+                    padding: const EdgeInsets.all(17),
+                    child: SelectFormField(
+                      type: SelectFormFieldType.dialog,
+                      controller: agendaController,
+                      //initialValue: _initialValue,
+                      icon: Icon(Icons.format_shapes),
+                      labelText: 'Do yo want us to help you?',
+                      changeIcon: true,
+                      dialogTitle: 'Need Assistance?',
+                      dialogCancelBtn: 'Close',
+                      enableSearch: false,
+                      dialogSearchHint: 'Do yo want us to help you?',
+                      items: _items,
+                      onChanged: (val) {
+                        setState(() {
+                          _valueChanged = val;
+                        });
+                      },
+                      validator: (val) {
+                        setState(() => _valueToValidate = val ?? '');
+                        if (val == null || val.isEmpty) {
+                          return 'Field Required';
+                        }
+                        return null;
+                      },
+                      onSaved: (val) => setState(() => _valueSaved = val ?? ''),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  TextFormField(
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Field Required';
+                      }
+                      return null;
+                    },
+                    controller: descController,
+                    keyboardType: TextInputType.multiline,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Other Information ',
+                      hintText: 'Please enter other relevant information',
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  TextFormField(
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Field Required';
+                      }
+                      return null;
+                    },
+                    controller: attendingController,
+                    keyboardType: TextInputType.text,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Business Value Estimate',
+                      hintText: 'Estimate Business Value',
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  TextFormField(
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Field Required';
+                      }
+                      return null;
+                    },
+                    controller: dateController2,
+                    keyboardType: TextInputType.text,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'When do you expect your report?',
+                      hintText: 'When do you expect your report?',
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                ],
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Submit'),
+              onPressed: () {
+                Map<String, String> revenue = {
+                  'value': attendingController.text,
+                  'description': descController.text,
+                  'help': agendaController.text,
+                  'reason': areaController.text,
+                  'date': dateController2.text,
+                  'status': 'pending'
+                };
+
+                advisory_reference.push().set(revenue);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Check if the user is signed in
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    switch (index) {
+      case 0:
+        // only scroll to top when current index is selected.
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => SignIn()));
+        break;
+      case 1:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => RevenuePage()));
+        break;
+      case 2:
+        showDialog<String>(
+          context: context,
+          builder: (BuildContext context) => Dialog(
+            alignment: Alignment.bottomCenter,
+            backgroundColor: Color.fromRGBO(0, 0, 0, 0.0),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Column(
+                    //crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => ISPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: const Text('Income Statement')),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => BSPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: const Text('     Balance Sheet   ')),
+                      const SizedBox(
+                        height: 5,
+                      ),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                            minimumSize: const Size.fromHeight(50),
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => FundingPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text('     Funding   ')),
+                      const SizedBox(height: 5),
+                      ElevatedButton(
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            onSurface: Colors.white,
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AdvisoryPage()),
+                            ); // Navigate back to first route when tapped.
+                          },
+                          child: Text(
+                              '     $threeQuarterTurn Business Advisory   ')),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                ],
+              ),
+            ),
+          ),
+        );
+        break;
+      case 3:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => ExpensesPage()));
+        break;
+      case 4:
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => ValuationPage()));
+        break;
+    }
+  }
+
+  List<_SalesData> data = [];
+  List<_SalesData> data2 = [];
+
+  double totalRevenue = 0;
+  double averageRevenue = 0;
+  double percentageRevenue = 0;
+  int countRevenue = 0;
+  double budget = 0, dailyRev = 0;
+
+  final amountController = TextEditingController();
+  final marginController = TextEditingController();
+  final dateController = TextEditingController();
+  final commentController = TextEditingController();
+  final planController = TextEditingController();
+  final Color unselectedItemColor = Colors.blue;
+  late Query dbRef, dbRef2;
+  late DatabaseReference reference, reference1;
+  String currentValue = '0';
+  String sme = '', currency = '';
+
+  getDateValue(date) {
+    String uid = user?.uid ?? 'uid';
+    FirebaseDatabase.instance
+        .ref()
+        .child('trackRevenue/' + uid + '/' + actualMonthRef + "/")
+        .onChildAdded
+        .listen((event) {
+      Map rev = event.snapshot.value as Map;
+      currentValue = rev['amount'];
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    String uid = user?.uid ?? 'uid'; // <-- Their email
+    String mail = user?.email ?? 'email';
+    startState();
+    //morningMessage();
+    FirebaseDatabase.instance
+        .ref()
+        .child('advisor/')
+        .onChildAdded
+        .listen((event) {
+      Map revenue = event.snapshot.value as Map;
+      revenue['key'] = event.snapshot.key;
+      if (advisorEmail == revenue['email']) {
+        print("napinda baba");
+        setState(() {
+          advisorNumber = revenue['number'];
+          advisorName = revenue['name'];
+          advisorCountry = revenue['country'];
+          advisorCity = revenue['city'];
+          advisorEx1 = revenue['exp1'];
+          advisorEx2 = revenue['exp2'];
+          advisorEx3 = revenue['exp3'];
+          advisorEx4 = revenue['exp4'];
+          advisorEx5 = revenue['exp5'];
+          advisorQ1 = revenue['q1'];
+          advisorQ2 = revenue['q2'];
+          advisorDesc = revenue['desc'];
+          advisorNum = revenue['num'];
+            if(revenue.containsKey('picture'))
+          {
+            advisorURL=revenue['picture'];
+          }
+        });
+      }
+    });
+    FirebaseDatabase.instance
+        .ref()
+        .child('budgets/' + uid)
+        .onChildAdded
+        .listen((event) {
+      Map revenue = event.snapshot.value as Map;
+
+      setState(() {
+        budget = double.parse(revenue['revenueBudget']);
+        startState();
+      });
+    });
+    FirebaseDatabase.instance
+        .ref()
+        .child('trackRevenue/' + uid + '/' + actualMonthRef + "/")
+        .orderByChild('date')
+        .limitToLast(30)
+        .onChildAdded
+        .listen((event) {
+      Map rev = event.snapshot.value as Map;
+      setState(() {
+        startState();
+        if (rev['date'] == actualDate) {
+          dailyRev += double.parse(rev['amount']);
+        }
+
+        data2.add(_SalesData(
+            rev['date'].substring(0, 2), double.parse(rev['amount'])));
+        data.add(_SalesData(rev['date'].substring(0, 2), budget));
+      });
+    });
+
+    FirebaseDatabase.instance.ref().child('User/').onChildAdded.listen((event) {
+      Map user = event.snapshot.value as Map;
+      if (user['email'] == mail) {
+        setState(() {
+          sme = user['sme'];
+          currency = user['currency'];
+        });
+      }
+    });
+    Map? revenueTrack;
+    FirebaseDatabase.instance
+        .ref()
+        .child('trackRevenue/' + uid + '/' + actualMonthRef + "/")
+        .onChildAdded
+        .listen((event) {
+      revenueTrack = event.snapshot.value as Map;
+    });
+
+    String getDate = "";
+    double dateAmount = 0.0;
+
+    FirebaseDatabase.instance
+        .ref()
+        .child('Revenue/' + uid)
+        .orderByChild("date")
+        .limitToLast(30)
+        .onChildAdded
+        .listen((event) {
+      Map revenue = event.snapshot.value as Map;
+      countRevenue++;
+
+      setState(() {
+        totalRevenue += double.parse(revenue['amount']);
+        averageRevenue = totalRevenue / countRevenue;
+        percentageRevenue = (averageRevenue / totalRevenue) * 100;
+
+        if (getDate == revenue['date'].substring(0, 2)) {
+          getDate = "";
+          dateAmount += double.parse(revenue['amount']);
+        } else {
+          getDate = revenue['date'].substring(0, 2);
+          dateAmount += double.parse(revenue['amount']);
+        }
+      });
+      if (getDate != "") {
+        // data2.add(_SalesData(getDate, dateAmount));
+        // data.add(_SalesData(getDate, budget));
+        dateAmount = 0;
+      }
+    });
+    dbRef = FirebaseDatabase.instance.ref().child('Revenue' + '/' + uid);
+    dbRef2 = FirebaseDatabase.instance.ref().child('Valuation' + '/' + uid);
+    reference = FirebaseDatabase.instance.ref().child('Revenue' + '/' + uid);
+    reference1 = FirebaseDatabase.instance
+        .ref()
+        .child('trackRevenue/' + uid + '/' + actualMonthRef + "/");
+  }
+
+  Widget listRevenue({required Map revenue}) {
+    return GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => SecondRoute(
+                    ky: revenue['key'],
+                    amount: revenue['amount'],
+                    plan: revenue['plan'],
+                    comment: revenue['comment'],
+                    margin: revenue['margin'],
+                    date: revenue['date'])),
+          );
+          // Add what you want to do on tap
+        },
+        child: SingleChildScrollView(
+            padding: EdgeInsets.all(20),
+            child: Row(children: [
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(
+                  revenue['date'],
+                  style: TextStyle(
+                    color: Colors.grey[500],
+                  ),
+                ),
+                Text(
+                  'Daily Sales',
+                  style: TextStyle(
+                    fontSize: 22,
+                  ),
+                ),
+                Text(
+                  revenue['comment'],
+                  style: TextStyle(
+                    color: Colors.grey[500],
+                  ),
+                ),
+              ]),
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '' + revenue['amount'],
+                        style: TextStyle(
+                          fontSize: 38,
+                        ),
+                      ),
+                    ]),
+              ),
+            ])));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Color insightColor2 = Colors.blue;
+    return Scaffold(
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /*2*/
+            Container(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                sme,
+                style: TextStyle(
+                  fontSize: 15,
+                ),
+              ),
+            ),
+            Text(
+              '$currency',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        actions: <Widget>[
+          DropdownButtonHideUnderline(
+            child: DropdownButton2(
+              customButton: const Icon(
+                Icons.menu_rounded,
+                size: 46,
+                color: Colors.white,
+              ),
+              customItemsHeights: [
+                ...List<double>.filled(MenuItems.firstItems.length, 48),
+                8,
+                ...List<double>.filled(MenuItems.secondItems.length, 48),
+              ],
+              items: [
+                ...MenuItems.firstItems.map(
+                  (item) => DropdownMenuItem<MenuItem>(
+                    value: item,
+                    child: MenuItems.buildItem(item),
+                  ),
+                ),
+                const DropdownMenuItem<Divider>(
+                    enabled: false, child: Divider()),
+                ...MenuItems.secondItems.map(
+                  (item) => DropdownMenuItem<MenuItem>(
+                    value: item,
+                    child: MenuItems.buildItem(item),
+                  ),
+                ),
+              ],
+              onChanged: (value) {
+                MenuItems.onChanged(context, value as MenuItem);
+              },
+              itemHeight: 48,
+              itemPadding: const EdgeInsets.only(left: 16, right: 16),
+              dropdownWidth: 160,
+              dropdownPadding: const EdgeInsets.symmetric(vertical: 6),
+              dropdownDecoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                color: Colors.blue,
+              ),
+              dropdownElevation: 8,
+              offset: const Offset(0, 8),
+            ),
+          ),
+        ],
+        backgroundColor: Colors.blue,
+        automaticallyImplyLeading: false,
+      ),
+      body: ListView(
+        children: [
+          //Initialize the chart widget
+
+          Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                    style: TextButton.styleFrom(
+                      onSurface: Colors.white,
+                      backgroundColor: Colors.blue,
+                    ),
+                    onPressed: null,
+                    child: Row(children: [
+                      Icon(Icons.arrow_circle_right_outlined),
+                      Text(
+                        'My Advisor Profile',
+                        style: TextStyle(
+                          color: Colors.white,
+                        ),
+                      )
+                    ])),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: Column(
+              children: [
+                advisorURL != null ? Image.network(advisorURL) : CircularProgressIndicator(),
+                Text(
+                  '$advisorName',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '$advisorNum, $advisorCity \n $advisorCountry',
+                  style: TextStyle(
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Email: $advisorEmail',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Number: $advisorNumber',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Qualificatons',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  '$advisorQ1 \n $advisorQ2',
+                  style: TextStyle(
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Experience',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'I. $advisorEx1\nII. $advisorEx2\nIII. $advisorEx3\nIV. $advisorEx4\nV. $advisorEx5\n\n',
+                  style: TextStyle(
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  '$advisorDesc',
+                  textAlign:TextAlign.center,
+                  style: TextStyle(
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.wallet),
+            label: 'Revenue',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add_circle),
+            label: '',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.pie_chart),
+            label: 'Expenses',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.attach_money_sharp),
+            label: 'Valuation',
           ),
         ],
         currentIndex: _selectedIndex,
